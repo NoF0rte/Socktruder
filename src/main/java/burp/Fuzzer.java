@@ -12,6 +12,7 @@ public class Fuzzer implements Runnable {
     private final WebSocket socket;
 	private final String message;
 	private final String keyword;
+	private final int delay;
 
 	private List<String> payloads;
 	private boolean stop = false;
@@ -22,6 +23,7 @@ public class Fuzzer implements Runnable {
 		this.socket = socket;
 		this.message = message;
 		this.keyword = Config.instance().fuzzKeyword();
+		this.delay = Config.instance().delay();
 
 		try {
 			this.payloads = Util.readLines(Config.instance().wordlist());
@@ -58,6 +60,12 @@ public class Fuzzer implements Runnable {
 			String msg = message.replace(keyword, payload);
 			api.logging().logToOutput(String.format("New payload: %s", msg));
 			socket.sendTextMessage(msg);
+			
+			try {
+				Thread.sleep(delay);
+			} catch (Exception e) {
+				api.logging().logToError(String.format("Error when sleeping %s", e.getMessage()));
+			}
 		}
 
 		setRunning(false);

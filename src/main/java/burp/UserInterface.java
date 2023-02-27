@@ -32,8 +32,16 @@ public class UserInterface {
 			fuzzKeywordTextField.setText(Config.instance().fuzzKeyword());
 		}
 
+		JTextField delayTextField = new JTextField();
+		delayTextField.setPreferredSize(new Dimension(250, textHeight));
+
+		if (Config.instance().delay() != null) {
+			delayTextField.setText(String.format("%d", Config.instance().delay()));
+		}
+
 		JLabel wordlistLabel = new JLabel("Wordlist: ");
 		JLabel keywordLabel = new JLabel("Fuzz Keyword: ");
+		JLabel delayLabel = new JLabel("Delay (ms): ");
 
 		JToggleButton enabledBtn = new JToggleButton();
 		if (Config.instance().enabled()) {
@@ -72,6 +80,16 @@ public class UserInterface {
 				if (fuzzKeyword != "") {
 					Config.instance().setFuzzKeyword(fuzzKeyword);
 				}
+
+				String delayText = delayTextField.getText();
+				if (delayText != "") {
+					try {
+						int delay = Integer.parseInt(delayText);
+						Config.instance().setDelay(delay);
+					} catch (Exception ex) {
+						api.logging().logToError(String.format("Error parsing delay: %s", ex.getMessage()));
+					}
+				}
 			}
 		});
 
@@ -106,6 +124,8 @@ public class UserInterface {
 		gridPanel.add(wordlistLabel, c);
 		c.gridy = 3;
 		gridPanel.add(keywordLabel, c);
+		c.gridy = 4;
+		gridPanel.add(delayLabel, c);
 
 		c.anchor = GridBagConstraints.EAST;
 		c.fill = GridBagConstraints.HORIZONTAL;
@@ -115,6 +135,8 @@ public class UserInterface {
 		c.gridy = 3;
 		gridPanel.add(fuzzKeywordTextField, c);
 		c.gridy = 4;
+		gridPanel.add(delayTextField, c);
+		c.gridy = 5;
 		gridPanel.add(saveBtn, c);
 
 		mainPanel.add(gridPanel);

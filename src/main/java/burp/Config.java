@@ -8,6 +8,7 @@ public class Config {
 	public static final String WORDLIST_PATH_KEY = "wordlistPath";
 	public static final String ENABLED_KEY = "enabled";
 	public static final String FUZZ_KEYWORD_KEY = "fuzz";
+	public static final String DELAY_KEY = "delay";
 
 	private static Config instance;
 
@@ -41,6 +42,10 @@ public class Config {
 		if (fuzzKeyword() == null) {
 			setFuzzKeyword("[FUZZ]");
 		}
+
+		if (delay() == null) {
+			setDelay(100);
+		}
 	}
 
 	public String wordlist() {
@@ -65,5 +70,13 @@ public class Config {
 
 	public void setFuzzKeyword(String keyword) {
 		extensionData.setString(FUZZ_KEYWORD_KEY, keyword);
+	}
+
+	public Integer delay() {
+		return extensionData.getInteger(DELAY_KEY);
+	}
+
+	public void setDelay(int delay) {
+		extensionData.setInteger(DELAY_KEY, delay);
 	}
 }
