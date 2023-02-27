@@ -39,9 +39,17 @@ public class UserInterface {
 			delayTextField.setText(String.format("%d", Config.instance().delay()));
 		}
 
+		JTextField successRegexTextField = new JTextField();
+		successRegexTextField.setPreferredSize(new Dimension(250, textHeight));
+
+		if (Config.instance().successRegex() != null) {
+			successRegexTextField.setText(Config.instance().successRegex());
+		}
+
 		JLabel wordlistLabel = new JLabel("Wordlist: ");
 		JLabel keywordLabel = new JLabel("Fuzz Keyword: ");
 		JLabel delayLabel = new JLabel("Delay (ms): ");
+		JLabel successLabel = new JLabel("Success Regex: ");
 
 		JToggleButton enabledBtn = new JToggleButton();
 		if (Config.instance().enabled()) {
@@ -79,6 +87,11 @@ public class UserInterface {
 				String fuzzKeyword = fuzzKeywordTextField.getText();
 				if (fuzzKeyword != "") {
 					Config.instance().setFuzzKeyword(fuzzKeyword);
+				}
+
+				String successRegex = successRegexTextField.getText();
+				if (successRegex != "") {
+					Config.instance().setSuccessRegex(successRegex);
 				}
 
 				String delayText = delayTextField.getText();
@@ -126,6 +139,8 @@ public class UserInterface {
 		gridPanel.add(keywordLabel, c);
 		c.gridy = 4;
 		gridPanel.add(delayLabel, c);
+		c.gridy = 5;
+		gridPanel.add(successLabel, c);
 
 		c.anchor = GridBagConstraints.EAST;
 		c.fill = GridBagConstraints.HORIZONTAL;
@@ -137,6 +152,8 @@ public class UserInterface {
 		c.gridy = 4;
 		gridPanel.add(delayTextField, c);
 		c.gridy = 5;
+		gridPanel.add(successRegexTextField, c);
+		c.gridy = 6;
 		gridPanel.add(saveBtn, c);
 
 		mainPanel.add(gridPanel);

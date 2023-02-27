@@ -9,6 +9,7 @@ public class Config {
 	public static final String ENABLED_KEY = "enabled";
 	public static final String FUZZ_KEYWORD_KEY = "fuzz";
 	public static final String DELAY_KEY = "delay";
+	public static final String SUCCESS_KEY = "success";
 
 	private static Config instance;
 
@@ -46,6 +47,10 @@ public class Config {
 		if (delay() == null) {
 			setDelay(100);
 		}
+
+		if (successRegex() == null) {
+			setSuccessRegex("");
+		}
 	}
 
 	public String wordlist() {
@@ -70,6 +75,14 @@ public class Config {
 
 	public void setFuzzKeyword(String keyword) {
 		extensionData.setString(FUZZ_KEYWORD_KEY, keyword);
+	}
+
+	public String successRegex() {
+		return extensionData.getString(SUCCESS_KEY);
+	}
+
+	public void setSuccessRegex(String regex) {
+		extensionData.setString(SUCCESS_KEY, regex);
 	}
 
 	public Integer delay() {
