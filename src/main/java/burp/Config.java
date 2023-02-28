@@ -76,6 +76,7 @@ public class Config {
 		fuzzListCache = fuzzList;
 
 		String json = new Gson().toJson(fuzzListCache);
+		api.logging().logToOutput(json);
 		extensionData.setString(FUZZ_LIST_KEY, json);
 	}
 
@@ -99,10 +100,6 @@ public class Config {
 		private String keyword;
 		private String wordlist;
 		private String success;
-
-		public Fuzz(){
-			
-		}
 
 		public String getKeyword() {
 			return keyword;
@@ -137,5 +134,9 @@ public class Config {
 			return Pattern.matches(success, response);
 		}
 
+		public Object[] toRow() {
+			Object[] row = {keyword, wordlist, success};
+			return row;
+		}
 	}
 }

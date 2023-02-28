@@ -11,8 +11,8 @@ import java.util.ArrayList;
 public class UserInterface {
 	public static final int textHeight = new JTextField().getPreferredSize().height;
 	
-	private static DefaultTableModel configTableModel;
-	private static JTable configTable;
+	private static DefaultTableModel fuzzTableModel;
+	private static JTable fuzzTable;
 	private static JTextField keywordTextField;
 	private static JTextField wordlistTextField;
 	private static JTextField successTextField;
@@ -146,11 +146,19 @@ public class UserInterface {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String keyword = keywordTextField.getText();
+				if (keyword == "") {
+					return;
+				}
+
 				String wordlist = wordlistTextField.getText();
+				if (wordlist == "") {
+					return;
+				}
+
 				String success = successTextField.getText();
 				
 				Object[] row = {keyword, wordlist, success};
-				configTableModel.addRow(row);
+				fuzzTableModel.addRow(row);
 
 				keywordTextField.setText("");
 				wordlistTextField.setText("");
@@ -164,14 +172,23 @@ public class UserInterface {
 
 		// Row 7
 
-		configTableModel = new DefaultTableModel(); 
-		configTableModel.addColumn("Keyword");
-		configTableModel.addColumn("Wordlist");
-		configTableModel.addColumn("Regex");
+		fuzzTableModel = new DefaultTableModel(){
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				return false;
+			}
+		}; 
+		fuzzTableModel.addColumn("Keyword");
+		fuzzTableModel.addColumn("Wordlist");
+		fuzzTableModel.addColumn("Regex");
 
-		configTable = new JTable(configTableModel);
+		if (Config.instance().fuzzList().size() > 0) {
+			Config.instance().fuzzList().stream().forEach(x -> fuzzTableModel.addRow(x.toRow()));
+		}
 
-		JScrollPane scrollPane = new JScrollPane(configTable);
+		fuzzTable = new JTable(fuzzTableModel);
+
+		JScrollPane scrollPane = new JScrollPane(fuzzTable);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setPreferredSize(new Dimension(600, textHeight*5));
 
@@ -189,16 +206,16 @@ public class UserInterface {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int selectedRow = configTable.getSelectedRow();
+				int selectedRow = fuzzTable.getSelectedRow();
 				if (selectedRow == -1) {
 					return;
 				}
 
-				keywordTextField.setText((String)configTableModel.getValueAt(selectedRow, 0));
-				wordlistTextField.setText((String)configTableModel.getValueAt(selectedRow, 1));
-				successTextField.setText((String)configTableModel.getValueAt(selectedRow, 2));
+				keywordTextField.setText((String)fuzzTableModel.getValueAt(selectedRow, 0));
+				wordlistTextField.setText((String)fuzzTableModel.getValueAt(selectedRow, 1));
+				successTextField.setText((String)fuzzTableModel.getValueAt(selectedRow, 2));
 
-				configTableModel.removeRow(selectedRow);
+				fuzzTableModel.removeRow(selectedRow);
 			}
 		});
 
@@ -210,12 +227,12 @@ public class UserInterface {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int selectedRow = configTable.getSelectedRow();
+				int selectedRow = fuzzTable.getSelectedRow();
 				if (selectedRow == -1) {
 					return;
 				}
 
-				configTableModel.removeRow(selectedRow);
+				fuzzTableModel.removeRow(selectedRow);
 			}
 		});
 
@@ -241,12 +258,12 @@ public class UserInterface {
 			public void actionPerformed(ActionEvent e) {
 				ArrayList<Config.Fuzz> fuzzItems = new ArrayList<>();
 
-				int numRows = configTableModel.getRowCount();
+				int numRows = fuzzTableModel.getRowCount();
 				for (int i = 0; i < numRows; i++) {
 					Config.Fuzz fuzzItem = Config.instance().new Fuzz();
-					fuzzItem.setKeyword((String)configTableModel.getValueAt(i, 0));
-					fuzzItem.setWordlist((String)configTableModel.getValueAt(i, 1));
-					fuzzItem.setSuccess((String)configTableModel.getValueAt(i, 2));
+					fuzzItem.setKeyword((String)fuzzTableModel.getValueAt(i, 0));
+					fuzzItem.setWordlist((String)fuzzTableModel.getValueAt(i, 1));
+					fuzzItem.setSuccess((String)fuzzTableModel.getValueAt(i, 2));
 
 					fuzzItems.add(fuzzItem);
 				}
