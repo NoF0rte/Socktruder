@@ -31,7 +31,6 @@ public class Extension implements BurpExtension, WebSocketCreatedHandler {
 			return;
 		}
         
-        webSocketCreated.webSocket().registerMessageHandler(new SocketMessageHandler(api, socket));
+        socket.registerMessageHandler(new SocketMessageHandler(api, socket));
     }
-	
 }
