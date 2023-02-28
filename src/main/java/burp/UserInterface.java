@@ -21,7 +21,7 @@ public class UserInterface {
 	public static void create(MontoyaApi api) {
 		JPanel gridPanel = new JPanel();
 		gridPanel.setLayout(new GridBagLayout());
-		gridPanel.setPreferredSize(new Dimension(650, textHeight*16));
+		gridPanel.setPreferredSize(new Dimension(800, textHeight*16));
 		gridPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		gridPanel.setBorder(BorderFactory.createTitledBorder("Settings"));
 
@@ -57,12 +57,44 @@ public class UserInterface {
 
 		// Row 2
 
+		JLabel delayLabel = new JLabel("Delay (ms): ");
+
+		c.anchor = GridBagConstraints.NORTHWEST;
+		c.gridx = 0;
+		c.gridy = 1;
+		gridPanel.add(delayLabel, c);
+
+		delayTextField = new JTextField();
+		delayTextField.setPreferredSize(textFieldDimension);
+
+		if (Config.instance().delay() != null) {
+			delayTextField.setText(String.format("%d", Config.instance().delay()));
+		}
+
+		c.anchor = GridBagConstraints.CENTER;
+		c.gridx = 1;
+		gridPanel.add(delayTextField, c);
+
+		// Row 3
+
+		JSeparator sep = new JSeparator();
+		sep.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridy = 2;
+		c.gridx = 0;
+		c.gridwidth = 4;
+		gridPanel.add(sep, c);
+
+		// Row 4
+
 		JLabel keywordLabel = new JLabel("Fuzz Keyword: ");
 
 		c.anchor = GridBagConstraints.NORTHWEST;
+		c.fill = GridBagConstraints.NONE;
 		c.gridwidth = 1;
 		c.gridx = 0;
-		c.gridy = 1;
+		c.gridy = 3;
 		c.insets.left = 0;
 		gridPanel.add(keywordLabel, c);
 
@@ -72,6 +104,40 @@ public class UserInterface {
 		c.anchor = GridBagConstraints.CENTER;
 		c.gridx = 1;
 		gridPanel.add(keywordTextField, c);
+
+		// Row 5
+
+		JLabel wordlistLabel = new JLabel("Wordlist: ");
+
+		c.anchor = GridBagConstraints.NORTHWEST;
+		c.gridx = 0;
+		c.gridy = 4;
+		c.insets.left = 0;
+		gridPanel.add(wordlistLabel, c);
+
+		wordlistTextField = new JTextField("/path/to/wordlist");
+		wordlistTextField.setPreferredSize(textFieldDimension);
+
+		c.anchor = GridBagConstraints.CENTER;
+		c.gridx = 1;
+		gridPanel.add(wordlistTextField, c);
+
+		// Row 6
+
+		JLabel successLabel = new JLabel("Success Regex: ");
+
+		c.anchor = GridBagConstraints.NORTHWEST;
+		c.gridx = 0;
+		c.gridy = 5;
+		c.insets.left = 0;
+		gridPanel.add(successLabel, c);
+
+		successTextField = new JTextField();
+		successTextField.setPreferredSize(textFieldDimension);
+
+		c.anchor = GridBagConstraints.CENTER;
+		c.gridx = 1;
+		gridPanel.add(successTextField, c);
 
 		JButton addBtn = new JButton("Add");
 		addBtn.setPreferredSize(btnDimension);
@@ -93,29 +159,32 @@ public class UserInterface {
 		});
 
 		c.gridx = 2;
-		c.anchor = GridBagConstraints.WEST;
-		c.insets.left = 10;
+		c.anchor = GridBagConstraints.EAST;
 		gridPanel.add(addBtn, c);
 
-		// Row 3
+		// Row 7
 
-		JLabel wordlistLabel = new JLabel("Wordlist: ");
+		configTableModel = new DefaultTableModel(); 
+		configTableModel.addColumn("Keyword");
+		configTableModel.addColumn("Wordlist");
+		configTableModel.addColumn("Regex");
 
-		c.anchor = GridBagConstraints.NORTHWEST;
+		configTable = new JTable(configTableModel);
+
+		JScrollPane scrollPane = new JScrollPane(configTable);
+		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setPreferredSize(new Dimension(600, textHeight*5));
+
+		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
-		c.gridy = 2;
-		c.insets.left = 0;
-		gridPanel.add(wordlistLabel, c);
-
-		wordlistTextField = new JTextField("/path/to/wordlist");
-		wordlistTextField.setPreferredSize(textFieldDimension);
-
-		c.anchor = GridBagConstraints.CENTER;
-		c.gridx = 1;
-		gridPanel.add(wordlistTextField, c);
+		c.gridy = 6;
+		c.gridwidth = 3;
+		gridPanel.add(scrollPane, c);
 
 		JButton modifyBtn = new JButton("Modify");
 		modifyBtn.setPreferredSize(btnDimension);
+		modifyBtn.setMinimumSize(btnDimension);
+		modifyBtn.setMaximumSize(btnDimension);
 		modifyBtn.addActionListener(new ActionListener() {
 
 			@Override
@@ -133,30 +202,10 @@ public class UserInterface {
 			}
 		});
 
-		c.gridx = 2;
-		c.anchor = GridBagConstraints.WEST;
-		c.insets.left = 10;
-		gridPanel.add(modifyBtn, c);
-
-		// Row 4
-
-		JLabel successLabel = new JLabel("Success Regex: ");
-
-		c.anchor = GridBagConstraints.NORTHWEST;
-		c.gridx = 0;
-		c.gridy = 3;
-		c.insets.left = 0;
-		gridPanel.add(successLabel, c);
-
-		successTextField = new JTextField();
-		successTextField.setPreferredSize(textFieldDimension);
-
-		c.anchor = GridBagConstraints.CENTER;
-		c.gridx = 1;
-		gridPanel.add(successTextField, c);
-
 		JButton deleteBtn = new JButton("Delete");
 		deleteBtn.setPreferredSize(btnDimension);
+		deleteBtn.setMinimumSize(btnDimension);
+		deleteBtn.setMaximumSize(btnDimension);
 		deleteBtn.addActionListener(new ActionListener() {
 
 			@Override
@@ -170,48 +219,20 @@ public class UserInterface {
 			}
 		});
 
-		c.gridx = 2;
-		c.anchor = GridBagConstraints.WEST;
-		c.insets.left = 10;
-		gridPanel.add(deleteBtn, c);
+		JPanel buttonPane = new JPanel();
+		buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.Y_AXIS));
+		buttonPane.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 0));
+		buttonPane.add(Box.createVerticalGlue());
+		buttonPane.add(modifyBtn);
+		buttonPane.add(Box.createRigidArea(new Dimension(0, 10)));
+		buttonPane.add(deleteBtn);
 
-		// Row 5
-
-		configTableModel = new DefaultTableModel(); 
-		configTableModel.addColumn("Keyword");
-		configTableModel.addColumn("Wordlist");
-		configTableModel.addColumn("Regex");
-
-		configTable = new JTable(configTableModel);
-
-		JScrollPane fuzzConfigScrollPane = new JScrollPane(configTable);
-		fuzzConfigScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		fuzzConfigScrollPane.setPreferredSize(new Dimension(600, textHeight*5));
-
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.gridx = 0;
-		c.gridy = 4;
-		c.gridwidth = 3;
-		gridPanel.add(fuzzConfigScrollPane, c);
-
-		// Row 6
-
-		JLabel delayLabel = new JLabel("Delay (ms): ");
-
+		c.gridx = 3;
+		c.gridwidth = 1;
 		c.anchor = GridBagConstraints.NORTHWEST;
-		c.gridx = 0;
-		c.gridy = 5;
-		c.insets.left = 0;
-		gridPanel.add(delayLabel, c);
+		gridPanel.add(buttonPane, c);
 
-		delayTextField = new JTextField("100");
-		delayTextField.setPreferredSize(textFieldDimension);
-
-		c.anchor = GridBagConstraints.CENTER;
-		c.gridx = 1;
-		gridPanel.add(delayTextField, c);
-
-		// Row 7
+		// Row 8
 
 		JButton saveBtn = new JButton("Save");
 		saveBtn.addActionListener(new ActionListener() {
@@ -246,9 +267,10 @@ public class UserInterface {
 		saveBtn.setPreferredSize(btnDimension);
 
 		c.fill = GridBagConstraints.NONE;
+		c.anchor = GridBagConstraints.EAST;
 		c.gridwidth = 1;
 		c.gridx = 2;
-		c.gridy = 6;
+		c.gridy = 7;
 		gridPanel.add(saveBtn, c);
 
 		JPanel mainPanel = new JPanel();
