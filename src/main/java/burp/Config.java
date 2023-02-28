@@ -3,13 +3,21 @@ package burp;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.persistence.PersistedObject;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.lang.reflect.Type;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 public class Config {
 
-	public static final String WORDLIST_PATH_KEY = "wordlistPath";
+	public static final String FUZZ_LIST_KEY = "fuzzList";
 	public static final String ENABLED_KEY = "enabled";
-	public static final String FUZZ_KEYWORD_KEY = "fuzz";
 	public static final String DELAY_KEY = "delay";
-	public static final String SUCCESS_KEY = "success";
+
+	private static List<Fuzz> fuzzListCache = null;
 
 	private static Config instance;
 
@@ -32,33 +40,43 @@ public class Config {
 	}
 
 	public void setDefaults() {
-		if (wordlist() == null) {
-			setWordlist("");
-		}
-
 		if (enabled() == null) {
 			setEnabled(true);
 		}
 
-		if (fuzzKeyword() == null) {
-			setFuzzKeyword("[FUZZ]");
+		if (fuzzList() == null) {
+			setFuzzList(new ArrayList<Fuzz>());
 		}
 
 		if (delay() == null) {
 			setDelay(100);
 		}
+	}
 
-		if (successRegex() == null) {
-			setSuccessRegex("");
+	public List<Fuzz> fuzzList() {
+		if (fuzzListCache == null) {
+			String json = extensionData.getString(FUZZ_LIST_KEY);
+			if (json == null) {
+				return null;
+			}
+
+			try {
+				Type listType = TypeToken.getParameterized(ArrayList.class, Fuzz.class).getType();
+				fuzzListCache = new Gson().fromJson(json, listType);
+			} catch (Exception e) {
+				api.logging().logToError(String.format("Error deserializing fuzzList from config", e.getMessage()));
+				return null;
+			}
 		}
+
+		return fuzzListCache;
 	}
 
-	public String wordlist() {
-		return extensionData.getString(WORDLIST_PATH_KEY);
-	}
+	public void setFuzzList(List<Fuzz> fuzzList) {
+		fuzzListCache = fuzzList;
 
-	public void setWordlist(String wordlist) {
-		extensionData.setString(WORDLIST_PATH_KEY, wordlist);
+		String json = new Gson().toJson(fuzzListCache);
+		extensionData.setString(FUZZ_LIST_KEY, json);
 	}
 
 	public synchronized Boolean enabled() {
@@ -69,27 +87,55 @@ public class Config {
 		extensionData.setBoolean(ENABLED_KEY, enabled);
 	}
 
-	public String fuzzKeyword() {
-		return extensionData.getString(FUZZ_KEYWORD_KEY);
-	}
-
-	public void setFuzzKeyword(String keyword) {
-		extensionData.setString(FUZZ_KEYWORD_KEY, keyword);
-	}
-
-	public String successRegex() {
-		return extensionData.getString(SUCCESS_KEY);
-	}
-
-	public void setSuccessRegex(String regex) {
-		extensionData.setString(SUCCESS_KEY, regex);
-	}
-
 	public Integer delay() {
 		return extensionData.getInteger(DELAY_KEY);
 	}
 
 	public void setDelay(int delay) {
 		extensionData.setInteger(DELAY_KEY, delay);
+	}
+
+	public class Fuzz {
+		private String keyword;
+		private String wordlist;
+		private String success;
+
+		public Fuzz(){
+			
+		}
+
+		public String getKeyword() {
+			return keyword;
+		}
+		public void setKeyword(String keyword) {
+			this.keyword = keyword;
+		}
+
+		public String getWordlist() {
+			return wordlist;
+		}
+		public void setWordlist(String wordlist) {
+			this.wordlist = wordlist;
+		}
+
+		public String getSuccess() {
+			return success;
+		}
+		public void setSuccess(String success) {
+			this.success = success;
+		}
+
+		public boolean keywordMatch(String payload) {
+			return payload.contains(keyword);
+		}
+
+		public boolean successMatch(String response) {
+			if (success == "") {
+				return false;
+			}
+
+			return Pattern.matches(success, response);
+		}
+
 	}
 }

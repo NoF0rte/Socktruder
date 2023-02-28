@@ -2,16 +2,17 @@ package burp;
 
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.websocket.*;
-import java.util.regex.Pattern;
+
+import java.util.Arrays;
 
 public class SocketMessageHandler implements MessageHandler {
 
 	private final MontoyaApi api;
 	private final WebSocket socket;
 
-	private Fuzzer fuzzer = null;
+	private FuzzRunner fuzzRunner = null;
 	private Thread fuzzThread = null;
-	private String successRegex = "";
+	private Config.Fuzz[] fuzzItems = null;
 
 	public SocketMessageHandler(MontoyaApi api, WebSocket socket) {
 		this.api = api;
@@ -22,9 +23,9 @@ public class SocketMessageHandler implements MessageHandler {
 		String payload = textMessage.payload();
 		this.api.logging().logToOutput(String.format("Client <- Server: %s", payload));
 
-		if (fuzzer != null && fuzzer.running() && successRegex != "" && Pattern.matches(successRegex, payload)) {
+		if (fuzzRunner != null && fuzzRunner.running() && Arrays.stream(fuzzItems).anyMatch(x -> x.successMatch(payload))) {
 			api.logging().logToOutput("Success regex matched! Stopping fuzzing...");
-			fuzzer.stop();
+			fuzzRunner.stop();
 		}
 
 		return TextMessageAction.continueWith(textMessage);
@@ -35,21 +36,27 @@ public class SocketMessageHandler implements MessageHandler {
 		
 		this.api.logging().logToOutput(String.format("Client -> Server: %s", payload));
 
-		if (fuzzer != null && !fuzzer.running()) {
-			fuzzer = null;
+		if (fuzzRunner != null && !fuzzRunner.running()) {
+			fuzzRunner = null;
 			fuzzThread = null;
-			successRegex = "";
+			fuzzItems = null;
 		}
 
-		if ((fuzzer != null && fuzzer.running()) || !payload.contains(Config.instance().fuzzKeyword())) {
+		if (fuzzRunner != null && fuzzRunner.running()) {
 			return TextMessageAction.continueWith(payload);
 		}
 
+		Object[] matches = Config.instance().fuzzList().stream().filter(x -> x.keywordMatch(payload)).toArray();
+		if (matches.length == 0) {
+			return TextMessageAction.continueWith(payload);
+		}
+
+		fuzzItems = (Config.Fuzz[])matches;
+
         this.api.logging().logToOutput("Payload fuzz keyword found");
 
-		successRegex = Config.instance().successRegex();
-		fuzzer = new Fuzzer(api, socket, payload);
-		fuzzThread = new Thread(fuzzer);
+		fuzzRunner = new FuzzRunner(api, socket, fuzzItems, payload);
+		fuzzThread = new Thread(fuzzRunner);
 
         fuzzThread.start();
 
