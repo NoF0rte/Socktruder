@@ -76,7 +76,6 @@ public class Config {
 		fuzzListCache = fuzzList;
 
 		String json = new Gson().toJson(fuzzListCache);
-		api.logging().logToOutput(json);
 		extensionData.setString(FUZZ_LIST_KEY, json);
 	}
 
