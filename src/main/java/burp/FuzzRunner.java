@@ -20,7 +20,7 @@ public class FuzzRunner implements Runnable {
 	private boolean stop = false;
 	private boolean running = true;
 
-	public FuzzRunner(MontoyaApi api, WebSocket socket, Config.Fuzz[] fuzzItems, String message) {
+	public FuzzRunner(MontoyaApi api, WebSocket socket, List<Config.Fuzz> fuzzItems, String message) {
 		this.api = api;
 		this.socket = socket;
 		this.message = message;

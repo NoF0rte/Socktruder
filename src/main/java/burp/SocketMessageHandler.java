@@ -3,7 +3,9 @@ package burp;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.websocket.*;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class SocketMessageHandler implements MessageHandler {
 
@@ -12,7 +14,7 @@ public class SocketMessageHandler implements MessageHandler {
 
 	private FuzzRunner fuzzRunner = null;
 	private Thread fuzzThread = null;
-	private Config.Fuzz[] fuzzItems = null;
+	private List<Config.Fuzz> fuzzItems = new ArrayList<>();
 
 	public SocketMessageHandler(MontoyaApi api, WebSocket socket) {
 		this.api = api;
@@ -23,7 +25,7 @@ public class SocketMessageHandler implements MessageHandler {
 		String payload = textMessage.payload();
 		this.api.logging().logToOutput(String.format("Client <- Server: %s", payload));
 
-		if (fuzzRunner != null && fuzzRunner.running() && Arrays.stream(fuzzItems).anyMatch(x -> x.successMatch(payload))) {
+		if (fuzzRunner != null && fuzzRunner.running() && fuzzItems.stream().anyMatch(x -> x.successMatch(payload))) {
 			api.logging().logToOutput("Success regex matched! Stopping fuzzing...");
 			fuzzRunner.stop();
 		}
@@ -39,19 +41,19 @@ public class SocketMessageHandler implements MessageHandler {
 		if (fuzzRunner != null && !fuzzRunner.running()) {
 			fuzzRunner = null;
 			fuzzThread = null;
-			fuzzItems = null;
+			fuzzItems.clear();
 		}
 
 		if (fuzzRunner != null && fuzzRunner.running()) {
 			return TextMessageAction.continueWith(payload);
 		}
 
-		Object[] matches = Config.instance().fuzzList().stream().filter(x -> x.keywordMatch(payload)).toArray();
-		if (matches.length == 0) {
+		List<Config.Fuzz> matches = Config.instance().fuzzList().stream().filter(x -> x.keywordMatch(payload)).collect(Collectors.toList());
+		if (matches.size() == 0) {
 			return TextMessageAction.continueWith(payload);
 		}
 
-		fuzzItems = (Config.Fuzz[])matches;
+		fuzzItems.addAll(matches);
 
         this.api.logging().logToOutput("Payload fuzz keyword found");
 
@@ -80,5 +82,4 @@ public class SocketMessageHandler implements MessageHandler {
     public BinaryMessageAction handleBinaryMessage(BinaryMessage binaryMessage) {
         return BinaryMessageAction.continueWith(binaryMessage);
     }
-	
 }
