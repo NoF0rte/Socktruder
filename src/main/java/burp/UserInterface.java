@@ -21,12 +21,12 @@ public class UserInterface {
 	public static void create(MontoyaApi api) {
 		JPanel gridPanel = new JPanel();
 		gridPanel.setLayout(new GridBagLayout());
-		gridPanel.setPreferredSize(new Dimension(800, textHeight*16));
+		gridPanel.setPreferredSize(new Dimension(800, 500));
 		gridPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		gridPanel.setBorder(BorderFactory.createTitledBorder("Settings"));
 
-		Dimension btnDimension = new Dimension(100, textHeight);
-		Dimension textFieldDimension = new Dimension(250, textHeight);
+		Dimension btnDimension = new Dimension(100, 25);
+		Dimension textFieldDimension = new Dimension(250, 25);
 		GridBagConstraints c = new GridBagConstraints();
 
 		// Row 1
@@ -190,7 +190,7 @@ public class UserInterface {
 
 		JScrollPane scrollPane = new JScrollPane(fuzzTable);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		scrollPane.setPreferredSize(new Dimension(600, textHeight*5));
+		scrollPane.setPreferredSize(new Dimension(600, 200));
 
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
