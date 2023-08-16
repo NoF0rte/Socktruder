@@ -9,7 +9,7 @@ import java.util.List;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.websocket.WebSocket;
 
-public class FuzzRunner implements Runnable {
+public class Runner implements Runnable {
 
 	private final MontoyaApi api;
     private final WebSocket socket;
@@ -20,7 +20,7 @@ public class FuzzRunner implements Runnable {
 	private boolean stop = false;
 	private boolean running = true;
 
-	public FuzzRunner(MontoyaApi api, WebSocket socket, List<Config.Fuzz> fuzzItems, String message) {
+	public Runner(MontoyaApi api, WebSocket socket, List<Config.Fuzz> fuzzItems, String message) {
 		this.api = api;
 		this.socket = socket;
 		this.message = message;

@@ -12,7 +12,7 @@ public class SocketMessageHandler implements MessageHandler {
 	private final MontoyaApi api;
 	private final WebSocket socket;
 
-	private FuzzRunner fuzzRunner = null;
+	private Runner runner = null;
 	private Thread fuzzThread = null;
 	private List<Config.Fuzz> fuzzItems = new ArrayList<>();
 
@@ -25,9 +25,9 @@ public class SocketMessageHandler implements MessageHandler {
 		String payload = textMessage.payload();
 		this.api.logging().logToOutput(String.format("Client <- Server: %s", payload));
 
-		if (fuzzRunner != null && fuzzRunner.running() && fuzzItems.stream().anyMatch(x -> x.successMatch(payload))) {
+		if (runner != null && runner.running() && fuzzItems.stream().anyMatch(x -> x.successMatch(payload))) {
 			api.logging().logToOutput("Success regex matched! Stopping fuzzing...");
-			fuzzRunner.stop();
+			runner.stop();
 		}
 
 		return TextMessageAction.continueWith(textMessage);
@@ -38,13 +38,13 @@ public class SocketMessageHandler implements MessageHandler {
 		
 		this.api.logging().logToOutput(String.format("Client -> Server: %s", payload));
 
-		if (fuzzRunner != null && !fuzzRunner.running()) {
-			fuzzRunner = null;
+		if (runner != null && !runner.running()) {
+			runner = null;
 			fuzzThread = null;
 			fuzzItems.clear();
 		}
 
-		if (fuzzRunner != null && fuzzRunner.running()) {
+		if (runner != null && runner.running()) {
 			return TextMessageAction.continueWith(payload);
 		}
 
@@ -57,8 +57,8 @@ public class SocketMessageHandler implements MessageHandler {
 
         this.api.logging().logToOutput("Payload fuzz keyword found");
 
-		fuzzRunner = new FuzzRunner(api, socket, fuzzItems, payload);
-		fuzzThread = new Thread(fuzzRunner);
+		runner = new Runner(api, socket, fuzzItems, payload);
+		fuzzThread = new Thread(runner);
 
         fuzzThread.start();
 
