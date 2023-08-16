@@ -150,7 +150,7 @@ public class UserInterface {
 					return;
 				}
 
-				String wordlist = wordlistTextField.getText();
+				String wordlist = wordlistTextField.getText().trim();
 				if (wordlist == "") {
 					return;
 				}

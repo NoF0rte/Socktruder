@@ -29,10 +29,10 @@ public class Runner implements Runnable {
 		for (Config.Fuzz fuzz : fuzzItems) {
 			List<String> payloads;
 			try {
-				payloads = Util.readLines(fuzz.getWordlist());
+				payloads = Util.readLines(fuzz.getWordlist().trim());
 			} catch (Exception e) {
 				api.logging().logToError(String.format("Error reading wordlist: %s", e.getMessage()));
-				payloads = new ArrayList<String>();
+				continue;
 			}
 
 			payloadsByKeyword.put(fuzz.getKeyword(), payloads);
