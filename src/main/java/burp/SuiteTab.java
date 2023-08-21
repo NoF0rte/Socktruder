@@ -27,46 +27,85 @@ public class SuiteTab extends javax.swing.JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        jSplitPane1 = new javax.swing.JSplitPane();
+        jSplitPane2 = new javax.swing.JSplitPane();
         jPanel1 = new javax.swing.JPanel();
-        enabledBtn = new javax.swing.JToggleButton();
+        jLabel1 = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
+        jPanel2 = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
+        contentPaneReplaceMe = new javax.swing.JScrollPane();
+        jTextPane1 = new javax.swing.JTextPane();
+        jTabbedPane1 = new javax.swing.JTabbedPane();
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Settings"));
-        jPanel1.setPreferredSize(new java.awt.Dimension(800, 500));
+        setLayout(new javax.swing.OverlayLayout(this));
+
+        jSplitPane1.setDividerLocation(500);
+
+        jSplitPane2.setDividerLocation(250);
+        jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+
         jPanel1.setLayout(new java.awt.GridBagLayout());
 
-        enabledBtn.setText("Disabled");
-        enabledBtn.setPreferredSize(new java.awt.Dimension(100, 25));
-        if (Config.instance().enabled()) {
-            enabledBtn.setSelected(true);
-            enabledBtn.setText("Enabled");
-        }
-        enabledBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                enabledBtnActionPerformed(evt);
-            }
-        });
+        jLabel1.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel1.setText("Fuzz");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        jPanel1.add(jLabel1, gridBagConstraints);
+
+        jScrollPane1.setViewportView(jTable1);
+
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 10, 0);
-        jPanel1.add(enabledBtn, gridBagConstraints);
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel1.add(jScrollPane1, gridBagConstraints);
 
-        add(jPanel1);
+        jSplitPane2.setTopComponent(jPanel1);
+
+        jPanel2.setLayout(new java.awt.GridBagLayout());
+
+        jLabel2.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel2.setText("Content");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        jPanel2.add(jLabel2, gridBagConstraints);
+
+        contentPaneReplaceMe.setViewportView(jTextPane1);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel2.add(contentPaneReplaceMe, gridBagConstraints);
+
+        jSplitPane2.setRightComponent(jPanel2);
+
+        jSplitPane1.setRightComponent(jSplitPane2);
+        jSplitPane1.setLeftComponent(jTabbedPane1);
+
+        add(jSplitPane1);
     }// </editor-fold>//GEN-END:initComponents
-
-    private void enabledBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enabledBtnActionPerformed
-        if (enabledBtn.isSelected()) {
-            enabledBtn.setText("Enabled");
-            Config.instance().setEnabled(true);
-        } else {
-            enabledBtn.setText("Disabled");
-            Config.instance().setEnabled(false);
-        }
-    }//GEN-LAST:event_enabledBtnActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JToggleButton enabledBtn;
+    private javax.swing.JScrollPane contentPaneReplaceMe;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JSplitPane jSplitPane1;
+    private javax.swing.JSplitPane jSplitPane2;
+    private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JTable jTable1;
+    private javax.swing.JTextPane jTextPane1;
     // End of variables declaration//GEN-END:variables
 }

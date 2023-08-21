@@ -2,14 +2,10 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "java (buildArtifact)",
-			"targetPath": "${workspaceFolder}/${workspaceFolderBasename}.jar",
-			"elements": [
-				"${compileOutput}",
-				"${dependencies}"
-			],
+			"label": "Build jar",
+			"type": "shell",
+			"command": "mvn clean compile assembly:single",
 			"problemMatcher": [],
-			"label": "java (buildArtifact): ws-fuzzer",
 			"group": {
 				"kind": "build",
 				"isDefault": true
