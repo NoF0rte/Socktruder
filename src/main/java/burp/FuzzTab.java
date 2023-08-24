@@ -4,14 +4,7 @@
  */
 package burp;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.text.MessageFormat;
-
 import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.core.ByteArray;
-import burp.api.montoya.ui.Selection;
-import burp.api.montoya.ui.editor.WebSocketMessageEditor;
 import burp.api.montoya.websocket.Direction;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.WebSocket;
@@ -22,12 +15,32 @@ import burp.api.montoya.websocket.WebSocket;
  */
 public class FuzzTab extends javax.swing.JPanel {
 
-    private final String PAYLOAD_CHAR = "§";
+    private final String MARKER = "§";
 
     private MontoyaApi api;
-    private WebSocketMessageEditor payloadEditor;
     private WebSocket socket;
     private Direction direction;
+
+    // private void updateStyling() {
+    //     String contents = payloadEditor.getText();
+    //     StyledDocument styledDoc = (StyledDocument)editorTextComponent.getDocument();
+
+    //     int end = 0;
+    //     int start = 0;
+    //     do {
+    //         start = contents.indexOf(MARKER, start);
+    //         if (start == -1) {
+    //             break;
+    //         }
+
+    //         end = contents.indexOf(MARKER, start);
+    //         if (end == -1) {
+    //             end = contents.length();
+    //         }
+
+    //         styledDoc.setCharacterAttributes(start, end, markerStyle, true);
+    //     } while (true);
+    // }
 
     /**
      * Creates new form FuzzTab
@@ -37,12 +50,10 @@ public class FuzzTab extends javax.swing.JPanel {
         this.socket = socket;
         this.direction = message.direction();
 
-        this.payloadEditor = api.userInterface().createWebSocketMessageEditor();
-        this.payloadEditor.setContents(ByteArray.byteArray(message.payload().replace(Config.SEND_KEYWORD, "")));
-
         initComponents();
 
         targetTextField.setText(url);
+        this.payloadEditor.setText(message.payload().replace(Config.SEND_KEYWORD, ""));
     }
 
     /**
@@ -61,7 +72,13 @@ public class FuzzTab extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         targetTextField = new javax.swing.JTextField();
-        editorContainer = new javax.swing.JPanel();
+        rTextScrollPane1 = new org.fife.ui.rtextarea.RTextScrollPane();
+        javax.swing.text.JTextComponent.removeKeymap("RTextAreaKeymap");
+        payloadEditor = new org.fife.ui.rsyntaxtextarea.RSyntaxTextArea();
+        javax.swing.UIManager.put("RSyntaxTextAreaUI.actionMap", null);
+        javax.swing.UIManager.put("RSyntaxTextAreaUI.inputMap", null);
+        javax.swing.UIManager.put("RTextAreaUI.inputMap", null);
+        javax.swing.UIManager.put("RTextAreaUI.actionMap", null);
         jPanel1 = new javax.swing.JPanel();
         addBtn = new javax.swing.JButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10));
@@ -113,9 +130,12 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         positionsPanel.add(targetTextField, gridBagConstraints);
 
-        editorContainer.setLayout(new java.awt.BorderLayout());
+        payloadEditor.setColumns(20);
+        payloadEditor.setRows(5);
+        payloadEditor.setCurrentLineHighlightColor(new java.awt.Color(234, 234, 234));
+        rTextScrollPane1.setViewportView(payloadEditor);
 
-        editorContainer.add(payloadEditor.uiComponent(), java.awt.BorderLayout.CENTER);
+        rTextScrollPane1.setLineNumbersEnabled(true);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -123,11 +143,10 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.gridheight = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 0.9;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        positionsPanel.add(editorContainer, gridBagConstraints);
+        positionsPanel.add(rTextScrollPane1, gridBagConstraints);
 
         jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.PAGE_AXIS));
 
@@ -194,60 +213,48 @@ public class FuzzTab extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void addBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addBtnActionPerformed
-        ByteArray content = payloadEditor.getContents();
+        if (payloadEditor.getSelectedText() != null) {
+            int start = payloadEditor.getSelectionStart();
+            int end = payloadEditor.getSelectionEnd();
 
-        try {
-            ByteArray replaced;
-            if (payloadEditor.selection().isPresent()) {
-                Selection selection = payloadEditor.selection().get();
-                String selected = selection.contents().toString();
+            payloadEditor.insert(MARKER, start);
+            payloadEditor.insert(MARKER, end + 1);
 
-                replaced = replaceSelection(content, MessageFormat.format("{0}{1}{0}", PAYLOAD_CHAR, selected), selection.offsets().startIndexInclusive(), selection.offsets().endIndexExclusive());
-            } else {
-                replaced = replaceSelection(content, PAYLOAD_CHAR, payloadEditor.caretPosition());
-            }
-
-            payloadEditor.setContents(replaced);
-        } catch (IOException e) {
-            api.logging().logToError(e.toString());
+            payloadEditor.setSelectionStart(start);
+            payloadEditor.setSelectionEnd(end + 2);
+        } else {
+            payloadEditor.insert(MARKER, payloadEditor.getCaretPosition());
         }
+
+        payloadEditor.grabFocus();
     }//GEN-LAST:event_addBtnActionPerformed
 
     private void clearBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearBtnActionPerformed
-        String content = payloadEditor.getContents().toString();
-        content = content.replace(PAYLOAD_CHAR, "");
-        payloadEditor.setContents(ByteArray.byteArray(content));
+        String before = payloadEditor.getText();
+        String after = before.replace(MARKER, "");
+        if (after != before) {
+            payloadEditor.setText(after);
+        }
+        // updateStyling();
+
+        payloadEditor.grabFocus();
     }//GEN-LAST:event_clearBtnActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addBtn;
     private javax.swing.JButton clearBtn;
-    private javax.swing.JPanel editorContainer;
     private javax.swing.Box.Filler filler1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea payloadEditor;
     private javax.swing.JPanel payloadsPanel;
     private javax.swing.JPanel positionsPanel;
+    private org.fife.ui.rtextarea.RTextScrollPane rTextScrollPane1;
     private javax.swing.JPanel settingsPanel;
     private javax.swing.JTextField targetTextField;
     // End of variables declaration//GEN-END:variables
-
-    private ByteArray replaceSelection(ByteArray content, String value, int position) throws IOException {
-        return replaceSelection(content, value, position, position);
-    }
-
-    private ByteArray replaceSelection(ByteArray content, String value, int start, int end) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        outputStream.writeBytes(content.subArray(0, start).getBytes());
-        outputStream.writeBytes(api.utilities().byteUtils().convertFromString(value));
-        outputStream.writeBytes(content.subArray(end, content.length()).getBytes());
-        outputStream.flush();
-
-        return ByteArray.byteArray(outputStream.toByteArray());
-    }
 }

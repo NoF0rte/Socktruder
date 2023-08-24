@@ -4,18 +4,9 @@
  */
 package burp;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
-import javax.swing.text.JTextComponent;
-
 import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.ui.editor.EditorOptions;
 import burp.api.montoya.ui.editor.WebSocketMessageEditor;
-import burp.api.montoya.websocket.Direction;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.WebSocket;
 
@@ -39,46 +30,6 @@ public class SuiteTab extends javax.swing.JPanel {
     private WebSocketMessageEditor contentEditor;
     private int tabNumber = 1;
 
-    private void logComponent(Component component) {
-        api.logging().logToOutput(component.getName());
-        api.logging().logToOutput("Methods:");
-        for (Method method : component.getClass().getMethods()) {
-            api.logging().logToOutput(method.getName());
-        }
-
-        api.logging().logToOutput("");
-        api.logging().logToOutput("Fields:");
-        for (Field field : component.getClass().getFields()) {
-            api.logging().logToOutput(field.getName());
-        }
-    }
-
-    private void findTextComponent(Component component) {
-        try {
-            JTextComponent textComponent = (JTextComponent)component;
-            if (textComponent != null) {
-                api.logging().logToOutput(textComponent.getText());
-                return;
-            }
-
-            Container container = (Container)component;
-            if (container != null) {
-                for (Component item : container.getComponents()) {
-                    findTextComponent(item);
-                }
-            }
-            
-        } catch (Exception ex) {
-            api.logging().logToError(ex);
-            Container container = (Container)component;
-            if (container != null) {
-                for (Component item : container.getComponents()) {
-                    findTextComponent(item);
-                }
-            }
-        }
-    }
-
     /**
      * Creates new form SuiteTab
      */
@@ -86,13 +37,6 @@ public class SuiteTab extends javax.swing.JPanel {
         this.api = api;
 
         contentEditor = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
-        contentEditor.setContents(ByteArray.byteArray("MY CONTENTS"));
-
-        // Container container = (Container)contentEditor.uiComponent();
-        // for (Component component : container.getComponents()) {
-        //     logComponent(component);
-        // }
-        findTextComponent(contentEditor.uiComponent());
 
         initComponents();
     }
