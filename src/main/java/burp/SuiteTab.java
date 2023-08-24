@@ -4,16 +4,96 @@
  */
 package burp;
 
+import java.awt.Component;
+import java.awt.Container;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+import javax.swing.text.JTextComponent;
+
+import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.core.ByteArray;
+import burp.api.montoya.ui.editor.EditorOptions;
+import burp.api.montoya.ui.editor.WebSocketMessageEditor;
+import burp.api.montoya.websocket.Direction;
+import burp.api.montoya.websocket.TextMessage;
+import burp.api.montoya.websocket.WebSocket;
+
 /**
  *
  * @author parallels
  */
 public class SuiteTab extends javax.swing.JPanel {
 
+    private static SuiteTab instance;
+
+    public static SuiteTab get() {
+        return instance;
+    }
+
+    public static void set(SuiteTab tab) {
+        instance = tab;
+    }
+
+    private MontoyaApi api;
+    private WebSocketMessageEditor contentEditor;
+    private int tabNumber = 1;
+
+    private void logComponent(Component component) {
+        api.logging().logToOutput(component.getName());
+        api.logging().logToOutput("Methods:");
+        for (Method method : component.getClass().getMethods()) {
+            api.logging().logToOutput(method.getName());
+        }
+
+        api.logging().logToOutput("");
+        api.logging().logToOutput("Fields:");
+        for (Field field : component.getClass().getFields()) {
+            api.logging().logToOutput(field.getName());
+        }
+    }
+
+    private void findTextComponent(Component component) {
+        try {
+            JTextComponent textComponent = (JTextComponent)component;
+            if (textComponent != null) {
+                api.logging().logToOutput(textComponent.getText());
+                return;
+            }
+
+            Container container = (Container)component;
+            if (container != null) {
+                for (Component item : container.getComponents()) {
+                    findTextComponent(item);
+                }
+            }
+            
+        } catch (Exception ex) {
+            api.logging().logToError(ex);
+            Container container = (Container)component;
+            if (container != null) {
+                for (Component item : container.getComponents()) {
+                    findTextComponent(item);
+                }
+            }
+        }
+    }
+
     /**
-     * Creates new form SuiteTabe
+     * Creates new form SuiteTab
      */
-    public SuiteTab() {
+    public SuiteTab(MontoyaApi api) {
+        this.api = api;
+
+        contentEditor = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
+        contentEditor.setContents(ByteArray.byteArray("MY CONTENTS"));
+
+        // Container container = (Container)contentEditor.uiComponent();
+        // for (Component component : container.getComponents()) {
+        //     logComponent(component);
+        // }
+        findTextComponent(contentEditor.uiComponent());
+
         initComponents();
     }
 
@@ -35,8 +115,7 @@ public class SuiteTab extends javax.swing.JPanel {
         jTable1 = new javax.swing.JTable();
         jPanel2 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
-        contentPaneReplaceMe = new javax.swing.JScrollPane();
-        jTextPane1 = new javax.swing.JTextPane();
+        contentContainer = new javax.swing.JPanel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
 
         setLayout(new javax.swing.OverlayLayout(this));
@@ -75,7 +154,9 @@ public class SuiteTab extends javax.swing.JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
         jPanel2.add(jLabel2, gridBagConstraints);
 
-        contentPaneReplaceMe.setViewportView(jTextPane1);
+        contentContainer.setLayout(new java.awt.BorderLayout());
+
+        contentContainer.add(contentEditor.uiComponent(), java.awt.BorderLayout.CENTER);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -84,7 +165,7 @@ public class SuiteTab extends javax.swing.JPanel {
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 0.9;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanel2.add(contentPaneReplaceMe, gridBagConstraints);
+        jPanel2.add(contentContainer, gridBagConstraints);
 
         jSplitPane2.setRightComponent(jPanel2);
 
@@ -96,7 +177,7 @@ public class SuiteTab extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JScrollPane contentPaneReplaceMe;
+    private javax.swing.JPanel contentContainer;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
@@ -106,6 +187,11 @@ public class SuiteTab extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTable jTable1;
-    private javax.swing.JTextPane jTextPane1;
     // End of variables declaration//GEN-END:variables
+
+    public void addFuzzTab(WebSocket socket, String url, TextMessage message) {
+        FuzzTab tab = new FuzzTab(api, socket, url, message);
+        jTabbedPane1.addTab(Integer.toString(tabNumber++), tab);
+        // jTabbedPane1.getTabComponentAt(tabNumber - 2);
+    }
 }
