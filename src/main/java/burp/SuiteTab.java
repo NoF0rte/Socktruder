@@ -134,6 +134,7 @@ public class SuiteTab extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
     public void addFuzzTab(WebSocket socket, String url, TextMessage message) {
+        api.logging().logToOutput("Attempting to add fuzz tab");
         FuzzTab tab = new FuzzTab(api, socket, url, message);
         jTabbedPane1.addTab(Integer.toString(tabNumber++), tab);
         // jTabbedPane1.getTabComponentAt(tabNumber - 2);

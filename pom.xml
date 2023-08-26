@@ -19,6 +19,13 @@
   <dependencies>
 
     <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.10.1</version>
+    </dependency>
+
+
+    <dependency>
       <groupId>com.fifesoft</groupId>
       <artifactId>rsyntaxtextarea</artifactId>
       <version>3.3.4</version>
@@ -28,11 +35,6 @@
       <groupId>net.portswigger.burp.extensions</groupId>
       <artifactId>montoya-api</artifactId>
       <version>2023.9</version>
-    </dependency>
-    <dependency>     
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>LATEST</version>
     </dependency>
   </dependencies>
 
