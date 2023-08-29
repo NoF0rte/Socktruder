@@ -4,8 +4,19 @@
  */
 package burp;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+
+import javax.swing.DefaultListModel;
+import javax.swing.JFileChooser;
+
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 
@@ -27,12 +38,22 @@ public class FuzzTab extends javax.swing.JPanel {
     private Direction direction;
     private List<Position> positions = new ArrayList<>();
     private int positionCount = 0;
+    private DefaultListModel<String> payloadsModel = new DefaultListModel<>();
+
+    private Position getSelectedPosition() {
+        int index = positionsComboBox.getSelectedIndex();
+        if (index == -1) {
+            return null;
+        }
+
+        return positions.get(index);
+    }
 
     private void updateHighlights(List<DocumentRange> ranges) {
-        payloadEditor.clearMarkAllHighlights();
+        messageEditor.clearMarkAllHighlights();
 
         if (ranges.size() != 0) {
-            payloadEditor.markAll(ranges);
+            messageEditor.markAll(ranges);
         }
     }
 
@@ -41,7 +62,7 @@ public class FuzzTab extends javax.swing.JPanel {
         
         int start = -1;
         ArrayList<DocumentRange> ranges = new ArrayList<>();
-        char[] chars = payloadEditor.getText().toCharArray();
+        char[] chars = messageEditor.getText().toCharArray();
         for (int i = 0; i < chars.length; i++) {
             char c = chars[i];
             if (c != markerChar) {
@@ -65,7 +86,7 @@ public class FuzzTab extends javax.swing.JPanel {
     private void updatePositions() {
         List<DocumentRange> ranges = getPayloadRanges();
 
-        String text = payloadEditor.getText();
+        String text = messageEditor.getText();
         for (int i = 0; i < ranges.size(); i++) {
             DocumentRange range = ranges.get(i);
 
@@ -77,13 +98,86 @@ public class FuzzTab extends javax.swing.JPanel {
                 position = positions.get(i);
             }
 
+            position.setIndex(i);
             position.setStart(range.getStartOffset());
             position.setEnd(range.getEndOffset());
             position.setName(text.substring(range.getStartOffset() + 1, range.getEndOffset() - 1));
         }
 
-        positionCount = ranges.size();
         updateHighlights(ranges);
+
+        positionCount = ranges.size();
+
+        int selectedIndex = positionsComboBox.getSelectedIndex();
+
+        positionsComboBox.removeAllItems();
+        for (int i = 0; i < positionCount; i++) {
+            positionsComboBox.addItem(positions.get(i));
+        }
+
+        if (positionCount == 0) {
+            selectedIndex = -1;
+        } else if (selectedIndex > positionCount - 1) {
+            selectedIndex = positionCount - 1;
+        } else if (selectedIndex == -1) {
+            selectedIndex = 0;
+        }
+
+        positionsComboBox.setSelectedIndex(selectedIndex);
+        selectedPositionChanged();
+    }
+
+    private void addToPayloadList(String item) {
+        Position position = getSelectedPosition();
+        if (position == null) {
+            return;
+        }
+
+        position.getPayloads().add(item);
+        payloadsModel.addElement(item);
+
+        updateCountLabel();
+    }
+
+    private void removePayloadAt(int i) {
+        Position position = getSelectedPosition();
+        if (position == null) {
+            return;
+        }
+
+        position.getPayloads().remove(i);
+        payloadsModel.removeElementAt(i);
+
+        updateCountLabel();
+    }
+
+    private void clearPayloads() {
+        Position position = getSelectedPosition();
+        if (position == null) {
+            return;
+        }
+
+        position.getPayloads().clear();
+        payloadsModel.clear();
+
+        updateCountLabel();
+    }
+
+    private void selectedPositionChanged() {
+        payloadsModel.clear();
+
+        Position position = getSelectedPosition();
+        if (position != null) {
+            List<String> payloads = position.getPayloads();
+
+            payloadsModel.addAll(payloads);
+        }
+
+        updateCountLabel();
+    }
+
+    private void updateCountLabel() {
+        payloadCountLabel.setText(Integer.toString(payloadsModel.size()));
     }
 
     /**
@@ -97,7 +191,7 @@ public class FuzzTab extends javax.swing.JPanel {
         initComponents();
 
         targetTextField.setText(url);
-        this.payloadEditor.setText(message.payload().replace(Config.SEND_KEYWORD, ""));
+        messageEditor.setText(message.payload().replace(Config.SEND_KEYWORD, ""));
     }
 
     /**
@@ -118,35 +212,36 @@ public class FuzzTab extends javax.swing.JPanel {
         targetTextField = new javax.swing.JTextField();
         rTextScrollPane1 = new org.fife.ui.rtextarea.RTextScrollPane();
         javax.swing.text.JTextComponent.removeKeymap("RTextAreaKeymap");
-        payloadEditor = new org.fife.ui.rsyntaxtextarea.RSyntaxTextArea();
+        messageEditor = new org.fife.ui.rsyntaxtextarea.RSyntaxTextArea();
         javax.swing.UIManager.put("RSyntaxTextAreaUI.actionMap", null);
         javax.swing.UIManager.put("RSyntaxTextAreaUI.inputMap", null);
         javax.swing.UIManager.put("RTextAreaUI.inputMap", null);
         javax.swing.UIManager.put("RTextAreaUI.actionMap", null);
         jPanel1 = new javax.swing.JPanel();
-        addBtn = new javax.swing.JButton();
+        addMarkerBtn = new javax.swing.JButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10));
-        clearBtn = new javax.swing.JButton();
+        clearMarkersBtn = new javax.swing.JButton();
         payloadsPanel = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
-        payloadSetComboBox = new javax.swing.JComboBox<>();
+        positionsComboBox = new javax.swing.JComboBox<>();
         jLabel7 = new javax.swing.JLabel();
         payloadCountLabel = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
         jLabel8 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
-        pasteBtn = new javax.swing.JButton();
-        loadBtn = new javax.swing.JButton();
-        removeBtn = new javax.swing.JButton();
-        clearPayloadItemsBtn = new javax.swing.JButton();
-        dedupeBtn = new javax.swing.JButton();
-        addPayloadItemBtn = new javax.swing.JButton();
+        pastePayloadsBtn = new javax.swing.JButton();
+        loadPayloadsBtn = new javax.swing.JButton();
+        removePayloadBtn = new javax.swing.JButton();
+        clearPayloadsBtn = new javax.swing.JButton();
+        dedupePayloadsBtn = new javax.swing.JButton();
+        addPayloadBtn = new javax.swing.JButton();
         payloadTextBox = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
         payloadList = new javax.swing.JList<>();
+        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         settingsPanel = new javax.swing.JPanel();
 
         setLayout(new java.awt.BorderLayout());
@@ -196,16 +291,16 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         positionsPanel.add(targetTextField, gridBagConstraints);
 
-        payloadEditor.setColumns(20);
-        payloadEditor.setRows(5);
-        payloadEditor.setCurrentLineHighlightColor(new java.awt.Color(240, 240, 240));
-        payloadEditor.setMarkAllHighlightColor(new java.awt.Color(200, 241, 230));
-        payloadEditor.addKeyListener(new java.awt.event.KeyAdapter() {
+        messageEditor.setColumns(20);
+        messageEditor.setRows(5);
+        messageEditor.setCurrentLineHighlightColor(new java.awt.Color(240, 240, 240));
+        messageEditor.setMarkAllHighlightColor(new java.awt.Color(200, 241, 230));
+        messageEditor.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
-                payloadEditorKeyTyped(evt);
+                messageEditorKeyTyped(evt);
             }
         });
-        rTextScrollPane1.setViewportView(payloadEditor);
+        rTextScrollPane1.setViewportView(messageEditor);
 
         rTextScrollPane1.setLineNumbersEnabled(true);
 
@@ -222,28 +317,28 @@ public class FuzzTab extends javax.swing.JPanel {
 
         jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.PAGE_AXIS));
 
-        addBtn.setText("Add §");
-        addBtn.setMaximumSize(new java.awt.Dimension(80, 25));
-        addBtn.setMinimumSize(new java.awt.Dimension(80, 25));
-        addBtn.setPreferredSize(new java.awt.Dimension(80, 25));
-        addBtn.addActionListener(new java.awt.event.ActionListener() {
+        addMarkerBtn.setText("Add §");
+        addMarkerBtn.setMaximumSize(new java.awt.Dimension(80, 25));
+        addMarkerBtn.setMinimumSize(new java.awt.Dimension(80, 25));
+        addMarkerBtn.setPreferredSize(new java.awt.Dimension(80, 25));
+        addMarkerBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                addBtnActionPerformed(evt);
+                addMarkerBtnActionPerformed(evt);
             }
         });
-        jPanel1.add(addBtn);
+        jPanel1.add(addMarkerBtn);
         jPanel1.add(filler1);
 
-        clearBtn.setText(" Clear §");
-        clearBtn.setMaximumSize(new java.awt.Dimension(80, 25));
-        clearBtn.setMinimumSize(new java.awt.Dimension(80, 25));
-        clearBtn.setPreferredSize(new java.awt.Dimension(80, 25));
-        clearBtn.addActionListener(new java.awt.event.ActionListener() {
+        clearMarkersBtn.setText(" Clear §");
+        clearMarkersBtn.setMaximumSize(new java.awt.Dimension(80, 25));
+        clearMarkersBtn.setMinimumSize(new java.awt.Dimension(80, 25));
+        clearMarkersBtn.setPreferredSize(new java.awt.Dimension(80, 25));
+        clearMarkersBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                clearBtnActionPerformed(evt);
+                clearMarkersBtnActionPerformed(evt);
             }
         });
-        jPanel1.add(clearBtn);
+        jPanel1.add(clearMarkersBtn);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
@@ -286,13 +381,19 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
         payloadsPanel.add(jLabel6, gridBagConstraints);
+
+        positionsComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                positionsComboBoxActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 10, 0, 0);
-        payloadsPanel.add(payloadSetComboBox, gridBagConstraints);
+        payloadsPanel.add(positionsComboBox, gridBagConstraints);
 
         jLabel7.setText("Payload count:");
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -340,51 +441,85 @@ public class FuzzTab extends javax.swing.JPanel {
 
         jPanel2.setLayout(new java.awt.GridBagLayout());
 
-        pasteBtn.setText("Paste");
+        pastePayloadsBtn.setText("Paste");
+        pastePayloadsBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                pastePayloadsBtnActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        jPanel2.add(pasteBtn, gridBagConstraints);
+        jPanel2.add(pastePayloadsBtn, gridBagConstraints);
 
-        loadBtn.setText("Load ...");
+        loadPayloadsBtn.setText("Load ...");
+        loadPayloadsBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                loadPayloadsBtnActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanel2.add(loadBtn, gridBagConstraints);
+        jPanel2.add(loadPayloadsBtn, gridBagConstraints);
 
-        removeBtn.setText("Remove");
+        removePayloadBtn.setText("Remove");
+        removePayloadBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                removePayloadBtnActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanel2.add(removeBtn, gridBagConstraints);
+        jPanel2.add(removePayloadBtn, gridBagConstraints);
 
-        clearPayloadItemsBtn.setText("Clear");
+        clearPayloadsBtn.setText("Clear");
+        clearPayloadsBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                clearPayloadsBtnActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanel2.add(clearPayloadItemsBtn, gridBagConstraints);
+        jPanel2.add(clearPayloadsBtn, gridBagConstraints);
 
-        dedupeBtn.setText("Deduplicate");
+        dedupePayloadsBtn.setText("Deduplicate");
+        dedupePayloadsBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                dedupePayloadsBtnActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 30, 0);
-        jPanel2.add(dedupeBtn, gridBagConstraints);
+        jPanel2.add(dedupePayloadsBtn, gridBagConstraints);
 
-        addPayloadItemBtn.setText("Add");
+        addPayloadBtn.setText("Add");
+        addPayloadBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addPayloadBtnActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        jPanel2.add(addPayloadItemBtn, gridBagConstraints);
+        jPanel2.add(addPayloadBtn, gridBagConstraints);
+
+        payloadTextBox.setMaximumSize(new java.awt.Dimension(260, 25));
+        payloadTextBox.setMinimumSize(new java.awt.Dimension(260, 25));
+        payloadTextBox.setPreferredSize(new java.awt.Dimension(260, 25));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 5;
@@ -392,6 +527,11 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanel2.add(payloadTextBox, gridBagConstraints);
 
+        jScrollPane1.setMinimumSize(new java.awt.Dimension(258, 130));
+
+        payloadList.setModel(payloadsModel);
+        payloadList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        payloadList.setFixedCellWidth(258);
         jScrollPane1.setViewportView(payloadList);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -408,6 +548,13 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         payloadsPanel.add(jPanel2, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        payloadsPanel.add(filler2, gridBagConstraints);
 
         jTabbedPane1.addTab("Payloads", payloadsPanel);
 
@@ -417,46 +564,149 @@ public class FuzzTab extends javax.swing.JPanel {
         add(jTabbedPane1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void addBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addBtnActionPerformed
-        if (payloadEditor.getSelectedText() != null) {
-            int start = payloadEditor.getSelectionStart();
-            int end = payloadEditor.getSelectionEnd();
+    private void addMarkerBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addMarkerBtnActionPerformed
+        if (messageEditor.getSelectedText() != null) {
+            int start = messageEditor.getSelectionStart();
+            int end = messageEditor.getSelectionEnd();
 
-            payloadEditor.insert(MARKER, start);
-            payloadEditor.insert(MARKER, end + 1);
+            messageEditor.insert(MARKER, start);
+            messageEditor.insert(MARKER, end + 1);
 
-            payloadEditor.setCaretPosition(end + 2);
+            messageEditor.setCaretPosition(end + 2);
         } else {
-            payloadEditor.insert(MARKER, payloadEditor.getCaretPosition());
+            messageEditor.insert(MARKER, messageEditor.getCaretPosition());
         }
 
         updatePositions();
-        payloadEditor.grabFocus();
-    }//GEN-LAST:event_addBtnActionPerformed
+        messageEditor.grabFocus();
+    }//GEN-LAST:event_addMarkerBtnActionPerformed
 
-    private void clearBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearBtnActionPerformed
-        String before = payloadEditor.getText();
+    private void clearMarkersBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearMarkersBtnActionPerformed
+        String before = messageEditor.getText();
         String after = before.replace(MARKER, "");
         if (after != before) {
-            payloadEditor.setText(after);
+            messageEditor.setText(after);
         }
         updatePositions();
 
-        payloadEditor.grabFocus();
-    }//GEN-LAST:event_clearBtnActionPerformed
+        messageEditor.grabFocus();
+    }//GEN-LAST:event_clearMarkersBtnActionPerformed
 
-    private void payloadEditorKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_payloadEditorKeyTyped
+    private void messageEditorKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_messageEditorKeyTyped
         updatePositions();
-    }//GEN-LAST:event_payloadEditorKeyTyped
+    }//GEN-LAST:event_messageEditorKeyTyped
+
+    private void loadPayloadsBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadPayloadsBtnActionPerformed
+        Position position = getSelectedPosition();
+        if (position == null) {
+            return;
+        }
+        int selectedIndex = positionsComboBox.getSelectedIndex();
+        if (selectedIndex == -1) {
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+        fileChooser.setDragEnabled(false);
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setFileHidingEnabled(true);
+
+        int choice = fileChooser.showOpenDialog(api.userInterface().swingUtils().suiteFrame());
+        if (choice == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+
+            try {
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                String line = reader.readLine();
+
+                while (line != null) {
+                    // Add line to list and model
+                    addToPayloadList(line);
+                    line = reader.readLine();
+                }
+
+                reader.close();
+            } catch (IOException e) {
+                api.logging().logToError(e);
+            }
+        }
+    }//GEN-LAST:event_loadPayloadsBtnActionPerformed
+
+    private void clearPayloadsBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearPayloadsBtnActionPerformed
+        clearPayloads();
+    }//GEN-LAST:event_clearPayloadsBtnActionPerformed
+
+    private void removePayloadBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removePayloadBtnActionPerformed
+        int selected = payloadList.getSelectedIndex();
+        if (selected == -1) {
+            return;
+        }
+
+        removePayloadAt(selected);
+    }//GEN-LAST:event_removePayloadBtnActionPerformed
+
+    private void addPayloadBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addPayloadBtnActionPerformed
+        if (positionsComboBox.getSelectedIndex() == -1) {
+            return;
+        }
+
+        String payload = payloadTextBox.getText().trim();
+        if (payload.isBlank() || payload.isEmpty()) {
+            return;
+        }
+
+        addToPayloadList(payload);
+        payloadTextBox.setText("");
+    }//GEN-LAST:event_addPayloadBtnActionPerformed
+
+    private void positionsComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_positionsComboBoxActionPerformed
+        selectedPositionChanged();
+    }//GEN-LAST:event_positionsComboBoxActionPerformed
+
+    private void pastePayloadsBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pastePayloadsBtnActionPerformed
+        if (positionsComboBox.getSelectedIndex() == -1) {
+            return;
+        }
+
+        try {
+            String clipboard = (String)Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+            clipboard.lines().forEach(item -> addToPayloadList(item));
+        } catch (Exception e) {
+            api.logging().logToError(e);
+        }
+    }//GEN-LAST:event_pastePayloadsBtnActionPerformed
+
+    private void dedupePayloadsBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dedupePayloadsBtnActionPerformed
+        Position position = getSelectedPosition();
+        if (position == null) {
+            return;
+        }
+
+        List<String> payloads = position.getPayloads();
+        HashSet<String> set = new HashSet<>(payloads);
+
+        payloads.clear();
+        payloadsModel.clear();
+
+        set.stream().forEach(item -> {
+            payloads.add(item);
+            payloadsModel.addElement(item);
+        });
+
+        updateCountLabel();
+    }//GEN-LAST:event_dedupePayloadsBtnActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton addBtn;
-    private javax.swing.JButton addPayloadItemBtn;
-    private javax.swing.JButton clearBtn;
-    private javax.swing.JButton clearPayloadItemsBtn;
-    private javax.swing.JButton dedupeBtn;
+    private javax.swing.JButton addMarkerBtn;
+    private javax.swing.JButton addPayloadBtn;
+    private javax.swing.JButton clearMarkersBtn;
+    private javax.swing.JButton clearPayloadsBtn;
+    private javax.swing.JButton dedupePayloadsBtn;
     private javax.swing.Box.Filler filler1;
+    private javax.swing.Box.Filler filler2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -471,17 +721,17 @@ public class FuzzTab extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JButton loadBtn;
-    private javax.swing.JButton pasteBtn;
+    private javax.swing.JButton loadPayloadsBtn;
+    private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea messageEditor;
+    private javax.swing.JButton pastePayloadsBtn;
     private javax.swing.JLabel payloadCountLabel;
-    private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea payloadEditor;
     private javax.swing.JList<String> payloadList;
-    private javax.swing.JComboBox<String> payloadSetComboBox;
     private javax.swing.JTextField payloadTextBox;
     private javax.swing.JPanel payloadsPanel;
+    private javax.swing.JComboBox<Position> positionsComboBox;
     private javax.swing.JPanel positionsPanel;
     private org.fife.ui.rtextarea.RTextScrollPane rTextScrollPane1;
-    private javax.swing.JButton removeBtn;
+    private javax.swing.JButton removePayloadBtn;
     private javax.swing.JPanel settingsPanel;
     private javax.swing.JTextField targetTextField;
     // End of variables declaration//GEN-END:variables

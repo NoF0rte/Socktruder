@@ -4,6 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Position {
+	private int index;
+	public int getIndex() {
+		return index;
+	}
+	public void setIndex(int index) {
+		this.index = index;
+	}
+
 	private int start;
 	public int getStart() {
 		return start;
@@ -33,6 +41,8 @@ public class Position {
 		return payloads;
 	}
 
-	public void replace(String content, int offset) {
+	@Override
+	public String toString() {
+		return String.format("{0} - {1}", index, name);
 	}
 }
