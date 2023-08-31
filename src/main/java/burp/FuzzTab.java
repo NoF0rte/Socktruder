@@ -12,18 +12,23 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.event.MouseEvent;
 
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.ui.editor.EditorOptions;
+import burp.api.montoya.ui.editor.WebSocketMessageEditor;
 import burp.api.montoya.websocket.Direction;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.WebSocket;
+import burp.ui.BTableModel;
 
 /**
  *
@@ -38,7 +43,8 @@ public class FuzzTab extends javax.swing.JPanel {
     private Direction direction;
     private List<Position> positions = new ArrayList<>();
     private int positionCount = 0;
-    private DefaultListModel<String> payloadsModel = new DefaultListModel<>();
+    private BTableModel payloadsModel = new BTableModel();
+    private WebSocketMessageEditor contentEditor;
 
     private Position getSelectedPosition() {
         int index = positionsComboBox.getSelectedIndex();
@@ -134,7 +140,7 @@ public class FuzzTab extends javax.swing.JPanel {
         }
 
         position.getPayloads().add(item);
-        payloadsModel.addElement(item);
+        payloadsModel.addRow(item);
 
         updateCountLabel();
     }
@@ -146,7 +152,7 @@ public class FuzzTab extends javax.swing.JPanel {
         }
 
         position.getPayloads().remove(i);
-        payloadsModel.removeElementAt(i);
+        payloadsModel.removeRow(i);
 
         updateCountLabel();
     }
@@ -170,14 +176,16 @@ public class FuzzTab extends javax.swing.JPanel {
         if (position != null) {
             List<String> payloads = position.getPayloads();
 
-            payloadsModel.addAll(payloads);
+            for (String payload : payloads) {
+                payloadsModel.addRow(payload);
+            }
         }
 
         updateCountLabel();
     }
 
     private void updateCountLabel() {
-        payloadCountLabel.setText(Integer.toString(payloadsModel.size()));
+        payloadCountLabel.setText(Integer.toString(payloadsModel.getRowCount()));
     }
 
     /**
@@ -187,11 +195,39 @@ public class FuzzTab extends javax.swing.JPanel {
         this.api = api;
         this.socket = socket;
         this.direction = message.direction();
+        
+        contentEditor = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
 
         initComponents();
 
         targetTextField.setText(url);
         messageEditor.setText(message.payload().replace(Config.SEND_KEYWORD, ""));
+        payloadsModel.addColumn("TEMP");
+        payloadsTable.setTableHeader(null);
+
+        jTabbedPane1.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                startAttackBtn.getParent().remove(startAttackBtn);
+
+                java.awt.GridBagConstraints constraints = new java.awt.GridBagConstraints();
+
+                constraints.anchor = java.awt.GridBagConstraints.LINE_END;
+                constraints.insets = new java.awt.Insets(0, 0, 0, 5);
+                constraints.gridy = 0;
+
+                int selected = jTabbedPane1.getSelectedIndex();
+                if (selected == 0) {
+                    constraints.gridx = 2;
+                    positionsPanel.add(startAttackBtn, constraints);
+                } else if (selected == 1) {
+                    constraints.gridx = 5;
+                    payloadsPanel.add(startAttackBtn, constraints);
+                } else if (selected == 2) {
+                    constraints.gridx = 2;
+                    settingsPanel.add(startAttackBtn, constraints);
+                }
+            }
+        });
     }
 
     /**
@@ -204,11 +240,21 @@ public class FuzzTab extends javax.swing.JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        jSplitPane1 = new javax.swing.JSplitPane();
+        jSplitPane2 = new javax.swing.JSplitPane();
+        jPanel3 = new javax.swing.JPanel();
+        jLabel10 = new javax.swing.JLabel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
+        jPanel4 = new javax.swing.JPanel();
+        jLabel11 = new javax.swing.JLabel();
+        contentContainer = new javax.swing.JPanel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         positionsPanel = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
+        startAttackBtn = new javax.swing.JButton();
         targetTextField = new javax.swing.JTextField();
         rTextScrollPane1 = new org.fife.ui.rtextarea.RTextScrollPane();
         javax.swing.text.JTextComponent.removeKeymap("RTextAreaKeymap");
@@ -240,13 +286,75 @@ public class FuzzTab extends javax.swing.JPanel {
         addPayloadBtn = new javax.swing.JButton();
         payloadTextBox = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
-        payloadList = new javax.swing.JList<>();
+        payloadsTable = new javax.swing.JTable();
         filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         settingsPanel = new javax.swing.JPanel();
+        jLabel12 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
+        jLabel13 = new javax.swing.JLabel();
 
         setLayout(new java.awt.BorderLayout());
 
+        jSplitPane1.setResizeWeight(0.5);
+        jSplitPane1.setMinimumSize(new java.awt.Dimension(0, 0));
+        jSplitPane1.setPreferredSize(new java.awt.Dimension(0, 0));
+
+        jSplitPane2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 20, 10));
+        jSplitPane2.setDividerLocation(250);
+        jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        jSplitPane2.setMinimumSize(new java.awt.Dimension(0, 0));
+        jSplitPane2.setPreferredSize(new java.awt.Dimension(0, 0));
+
+        jPanel3.setLayout(new java.awt.GridBagLayout());
+
+        jLabel10.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel10.setText("Fuzz");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        jPanel3.add(jLabel10, gridBagConstraints);
+
+        jScrollPane2.setViewportView(jTable1);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel3.add(jScrollPane2, gridBagConstraints);
+
+        jSplitPane2.setTopComponent(jPanel3);
+
+        jPanel4.setLayout(new java.awt.GridBagLayout());
+
+        jLabel11.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel11.setText("Content");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        jPanel4.add(jLabel11, gridBagConstraints);
+
+        contentContainer.setLayout(new java.awt.BorderLayout());
+
+        contentContainer.add(contentEditor.uiComponent(), java.awt.BorderLayout.CENTER);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel4.add(contentContainer, gridBagConstraints);
+
+        jSplitPane2.setRightComponent(jPanel4);
+
+        jSplitPane1.setRightComponent(jSplitPane2);
+
         jTabbedPane1.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 10, 20, 5));
+        jTabbedPane1.setMinimumSize(new java.awt.Dimension(0, 0));
+        jTabbedPane1.setPreferredSize(new java.awt.Dimension(0, 0));
 
         positionsPanel.setLayout(new java.awt.GridBagLayout());
 
@@ -278,8 +386,23 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LAST_LINE_START;
         positionsPanel.add(jLabel3, gridBagConstraints);
+
+        startAttackBtn.setBackground(new java.awt.Color(255, 102, 51));
+        startAttackBtn.setFont(new java.awt.Font("Cantarell", 1, 15)); // NOI18N
+        startAttackBtn.setForeground(new java.awt.Color(255, 255, 255));
+        startAttackBtn.setText("Start attack");
+        startAttackBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                startAttackBtnActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        positionsPanel.add(startAttackBtn, gridBagConstraints);
 
         targetTextField.setEditable(false);
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -517,9 +640,9 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         jPanel2.add(addPayloadBtn, gridBagConstraints);
 
-        payloadTextBox.setMaximumSize(new java.awt.Dimension(260, 25));
-        payloadTextBox.setMinimumSize(new java.awt.Dimension(260, 25));
-        payloadTextBox.setPreferredSize(new java.awt.Dimension(260, 25));
+        payloadTextBox.setMaximumSize(new java.awt.Dimension(300, 25));
+        payloadTextBox.setMinimumSize(new java.awt.Dimension(300, 25));
+        payloadTextBox.setPreferredSize(new java.awt.Dimension(300, 25));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 5;
@@ -527,12 +650,13 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanel2.add(payloadTextBox, gridBagConstraints);
 
-        jScrollPane1.setMinimumSize(new java.awt.Dimension(258, 130));
+        jScrollPane1.setMinimumSize(new java.awt.Dimension(300, 80));
+        jScrollPane1.setPreferredSize(new java.awt.Dimension(300, 80));
 
-        payloadList.setModel(payloadsModel);
-        payloadList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        payloadList.setFixedCellWidth(258);
-        jScrollPane1.setViewportView(payloadList);
+        payloadsTable.setModel(payloadsModel);
+        payloadsTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        payloadsTable.setShowGrid(false);
+        jScrollPane1.setViewportView(payloadsTable);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -549,7 +673,7 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         payloadsPanel.add(jPanel2, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridx = 5;
         gridBagConstraints.gridy = 7;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
@@ -559,9 +683,44 @@ public class FuzzTab extends javax.swing.JPanel {
         jTabbedPane1.addTab("Payloads", payloadsPanel);
 
         settingsPanel.setLayout(new java.awt.GridBagLayout());
+
+        jLabel12.setText("Delay:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        settingsPanel.add(jLabel12, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 0.3;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 0);
+        settingsPanel.add(jTextField1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        settingsPanel.add(filler3, gridBagConstraints);
+
+        jLabel13.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel13.setText("Timing");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 10, 0);
+        settingsPanel.add(jLabel13, gridBagConstraints);
+
         jTabbedPane1.addTab("Settings", settingsPanel);
 
-        add(jTabbedPane1, java.awt.BorderLayout.CENTER);
+        jSplitPane1.setLeftComponent(jTabbedPane1);
+
+        add(jSplitPane1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
     private void addMarkerBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addMarkerBtnActionPerformed
@@ -639,7 +798,7 @@ public class FuzzTab extends javax.swing.JPanel {
     }//GEN-LAST:event_clearPayloadsBtnActionPerformed
 
     private void removePayloadBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removePayloadBtnActionPerformed
-        int selected = payloadList.getSelectedIndex();
+        int selected = payloadsTable.getSelectedRow();
         if (selected == -1) {
             return;
         }
@@ -659,6 +818,7 @@ public class FuzzTab extends javax.swing.JPanel {
 
         addToPayloadList(payload);
         payloadTextBox.setText("");
+        payloadTextBox.grabFocus();
     }//GEN-LAST:event_addPayloadBtnActionPerformed
 
     private void positionsComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_positionsComboBoxActionPerformed
@@ -692,11 +852,15 @@ public class FuzzTab extends javax.swing.JPanel {
 
         set.stream().forEach(item -> {
             payloads.add(item);
-            payloadsModel.addElement(item);
+            payloadsModel.addRow(item);
         });
 
         updateCountLabel();
     }//GEN-LAST:event_dedupePayloadsBtnActionPerformed
+
+    private void startAttackBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startAttackBtnActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_startAttackBtnActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -704,10 +868,16 @@ public class FuzzTab extends javax.swing.JPanel {
     private javax.swing.JButton addPayloadBtn;
     private javax.swing.JButton clearMarkersBtn;
     private javax.swing.JButton clearPayloadsBtn;
+    private javax.swing.JPanel contentContainer;
     private javax.swing.JButton dedupePayloadsBtn;
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
+    private javax.swing.Box.Filler filler3;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -718,21 +888,29 @@ public class FuzzTab extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSplitPane jSplitPane1;
+    private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JTable jTable1;
+    private javax.swing.JTextField jTextField1;
     private javax.swing.JButton loadPayloadsBtn;
     private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea messageEditor;
     private javax.swing.JButton pastePayloadsBtn;
     private javax.swing.JLabel payloadCountLabel;
-    private javax.swing.JList<String> payloadList;
     private javax.swing.JTextField payloadTextBox;
     private javax.swing.JPanel payloadsPanel;
+    private javax.swing.JTable payloadsTable;
     private javax.swing.JComboBox<Position> positionsComboBox;
     private javax.swing.JPanel positionsPanel;
     private org.fife.ui.rtextarea.RTextScrollPane rTextScrollPane1;
     private javax.swing.JButton removePayloadBtn;
     private javax.swing.JPanel settingsPanel;
+    private javax.swing.JButton startAttackBtn;
     private javax.swing.JTextField targetTextField;
     // End of variables declaration//GEN-END:variables
 }

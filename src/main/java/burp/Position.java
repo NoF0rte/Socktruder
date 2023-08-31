@@ -1,5 +1,6 @@
 package burp;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +44,6 @@ public class Position {
 
 	@Override
 	public String toString() {
-		return String.format("{0} - {1}", index, name);
+		return MessageFormat.format("{0} - {1}", index, name);
 	}
 }

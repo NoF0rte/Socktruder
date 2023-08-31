@@ -27,7 +27,6 @@ public class SuiteTab extends javax.swing.JPanel {
     }
 
     private MontoyaApi api;
-    private WebSocketMessageEditor contentEditor;
     private int tabNumber = 1;
 
     /**
@@ -35,8 +34,6 @@ public class SuiteTab extends javax.swing.JPanel {
      */
     public SuiteTab(MontoyaApi api) {
         this.api = api;
-
-        contentEditor = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
 
         initComponents();
     }
@@ -51,86 +48,15 @@ public class SuiteTab extends javax.swing.JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        jSplitPane1 = new javax.swing.JSplitPane();
-        jSplitPane2 = new javax.swing.JSplitPane();
-        jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
-        jPanel2 = new javax.swing.JPanel();
-        jLabel2 = new javax.swing.JLabel();
-        contentContainer = new javax.swing.JPanel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
 
         setLayout(new javax.swing.OverlayLayout(this));
-
-        jSplitPane1.setDividerLocation(500);
-
-        jSplitPane2.setDividerLocation(250);
-        jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-
-        jPanel1.setLayout(new java.awt.GridBagLayout());
-
-        jLabel1.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
-        jLabel1.setText("Fuzz");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
-        jPanel1.add(jLabel1, gridBagConstraints);
-
-        jScrollPane1.setViewportView(jTable1);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 0.9;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanel1.add(jScrollPane1, gridBagConstraints);
-
-        jSplitPane2.setTopComponent(jPanel1);
-
-        jPanel2.setLayout(new java.awt.GridBagLayout());
-
-        jLabel2.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
-        jLabel2.setText("Content");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
-        jPanel2.add(jLabel2, gridBagConstraints);
-
-        contentContainer.setLayout(new java.awt.BorderLayout());
-
-        contentContainer.add(contentEditor.uiComponent(), java.awt.BorderLayout.CENTER);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 0.9;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanel2.add(contentContainer, gridBagConstraints);
-
-        jSplitPane2.setRightComponent(jPanel2);
-
-        jSplitPane1.setRightComponent(jSplitPane2);
-        jSplitPane1.setLeftComponent(jTabbedPane1);
-
-        add(jSplitPane1);
+        add(jTabbedPane1);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel contentContainer;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JSplitPane jSplitPane1;
-    private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTable jTable1;
     // End of variables declaration//GEN-END:variables
 
     public void addFuzzTab(WebSocket socket, String url, TextMessage message) {
