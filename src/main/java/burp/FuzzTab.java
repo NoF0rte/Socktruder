@@ -12,23 +12,30 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JFileChooser;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableColumnModel;
+import javax.swing.table.TableColumn;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.event.MouseEvent;
 
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.ui.editor.EditorOptions;
 import burp.api.montoya.ui.editor.WebSocketMessageEditor;
 import burp.api.montoya.websocket.Direction;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.WebSocket;
-import burp.ui.BTableModel;
+import burp.ui.BListTableModel;
+import burp.ui.BReadOnlyTableModel;
+import burp.ui.BResultsModel;
 
 /**
  *
@@ -43,7 +50,9 @@ public class FuzzTab extends javax.swing.JPanel {
     private Direction direction;
     private List<Position> positions = new ArrayList<>();
     private int positionCount = 0;
-    private BTableModel payloadsModel = new BTableModel();
+    private BListTableModel payloadsModel = new BListTableModel();
+    private BResultsModel resultsModel = new BResultsModel();
+    private DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
     private WebSocketMessageEditor contentEditor;
 
     private Position getSelectedPosition() {
@@ -205,6 +214,20 @@ public class FuzzTab extends javax.swing.JPanel {
         payloadsModel.addColumn("TEMP");
         payloadsTable.setTableHeader(null);
 
+        resultsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent arg0) {
+                if (arg0.getValueIsAdjusting()) {
+                    return;
+                }
+
+                int row = resultsTable.getRowSorter().convertRowIndexToModel(resultsTable.getSelectedRow());
+                String msg = resultsModel.getRow(row).message;
+                contentEditor.setContents(ByteArray.byteArray(msg));
+            }
+        });
+        resultsTable.getColumn("Payload").setPreferredWidth(300);
+
         jTabbedPane1.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 startAttackBtn.getParent().remove(startAttackBtn);
@@ -245,7 +268,7 @@ public class FuzzTab extends javax.swing.JPanel {
         jPanel3 = new javax.swing.JPanel();
         jLabel10 = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
+        resultsTable = new javax.swing.JTable();
         jPanel4 = new javax.swing.JPanel();
         jLabel11 = new javax.swing.JLabel();
         contentContainer = new javax.swing.JPanel();
@@ -314,7 +337,12 @@ public class FuzzTab extends javax.swing.JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
         jPanel3.add(jLabel10, gridBagConstraints);
 
-        jScrollPane2.setViewportView(jTable1);
+        resultsTable.setAutoCreateRowSorter(true);
+        resultsTable.setModel(resultsModel);
+        resultsTable.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
+        resultsTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        resultsTable.getTableHeader().setReorderingAllowed(false);
+        jScrollPane2.setViewportView(resultsTable);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -859,7 +887,6 @@ public class FuzzTab extends javax.swing.JPanel {
     }//GEN-LAST:event_dedupePayloadsBtnActionPerformed
 
     private void startAttackBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startAttackBtnActionPerformed
-        // TODO add your handling code here:
     }//GEN-LAST:event_startAttackBtnActionPerformed
 
 
@@ -896,7 +923,6 @@ public class FuzzTab extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTable jTable1;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JButton loadPayloadsBtn;
     private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea messageEditor;
@@ -909,6 +935,7 @@ public class FuzzTab extends javax.swing.JPanel {
     private javax.swing.JPanel positionsPanel;
     private org.fife.ui.rtextarea.RTextScrollPane rTextScrollPane1;
     private javax.swing.JButton removePayloadBtn;
+    private javax.swing.JTable resultsTable;
     private javax.swing.JPanel settingsPanel;
     private javax.swing.JButton startAttackBtn;
     private javax.swing.JTextField targetTextField;

@@ -5,8 +5,6 @@
 package burp;
 
 import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.ui.editor.EditorOptions;
-import burp.api.montoya.ui.editor.WebSocketMessageEditor;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.WebSocket;
 
@@ -46,7 +44,6 @@ public class SuiteTab extends javax.swing.JPanel {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
 
         jTabbedPane1 = new javax.swing.JTabbedPane();
 
@@ -60,9 +57,12 @@ public class SuiteTab extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
     public void addFuzzTab(WebSocket socket, String url, TextMessage message) {
-        api.logging().logToOutput("Attempting to add fuzz tab");
-        FuzzTab tab = new FuzzTab(api, socket, url, message);
-        jTabbedPane1.addTab(Integer.toString(tabNumber++), tab);
-        // jTabbedPane1.getTabComponentAt(tabNumber - 2);
+        try {
+            FuzzTab tab = new FuzzTab(api, socket, url, message);
+            jTabbedPane1.addTab(Integer.toString(tabNumber++), tab);
+            // TODO: message box that says it was sent to WS Fuzzer
+        } catch (Exception e) {
+            // TODO: message box that says it sending to WS Fuzzer failed
+        }
     }
 }

@@ -8,13 +8,12 @@ import burp.api.montoya.websocket.*;
 
 public class Extension implements BurpExtension, WebSocketCreatedHandler {
 
+	private static final String extensionName = "WS Fuzzer";
 	private MontoyaApi api;
 
 	@Override
 	public void initialize(MontoyaApi api) {
 		this.api = api;
-
-		api.extension().setName("WS Fuzzer");
 
 		Config.setInstance(new Config(api));
 
@@ -23,8 +22,8 @@ public class Extension implements BurpExtension, WebSocketCreatedHandler {
 
 		SuiteTab.set(new SuiteTab(api));
 
-		api.userInterface().registerSuiteTab("WS Fuzzer", SuiteTab.get());
-		// UserInterface.create(api);
+		api.userInterface().registerSuiteTab(extensionName, SuiteTab.get());
+		api.extension().setName(extensionName);
 	}
 
 	@Override
@@ -35,7 +34,6 @@ public class Extension implements BurpExtension, WebSocketCreatedHandler {
 		
 		WebSocket socket = webSocketCreated.webSocket();
         
-        // socket.registerMessageHandler(new SocketMessageHandler(api, socket));
 		SocketMessageListener listener = new SocketMessageListener(socket, webSocketCreated.upgradeRequest().url());
 		Registration registration = socket.registerMessageHandler(listener);
 
