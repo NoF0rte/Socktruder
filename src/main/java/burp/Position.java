@@ -46,4 +46,10 @@ public class Position {
 	public String toString() {
 		return MessageFormat.format("{0} - {1}", index, name);
 	}
+
+	public String replace(String message, String payload, int offset) {
+		String before = message.substring(0, this.start + offset);
+		String after = message.substring(end + offset, message.length());
+		return before + payload + after;
+	}
 }

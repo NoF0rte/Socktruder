@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import burp.api.montoya.websocket.Direction;
 
 public class BResultsModel extends BReadOnlyTableModel {
-
 	private ArrayList<Row> rows = new ArrayList<>();
 
 	public BResultsModel() {

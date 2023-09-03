@@ -12,14 +12,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import javax.swing.DefaultListSelectionModel;
 import javax.swing.JFileChooser;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableColumnModel;
-import javax.swing.table.TableColumn;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -28,32 +21,37 @@ import org.fife.ui.rsyntaxtextarea.DocumentRange;
 
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.core.ByteArray;
+import burp.api.montoya.core.Registration;
 import burp.api.montoya.ui.editor.EditorOptions;
 import burp.api.montoya.ui.editor.WebSocketMessageEditor;
+import burp.api.montoya.websocket.BinaryMessage;
+import burp.api.montoya.websocket.BinaryMessageAction;
 import burp.api.montoya.websocket.Direction;
+import burp.api.montoya.websocket.MessageHandler;
 import burp.api.montoya.websocket.TextMessage;
+import burp.api.montoya.websocket.TextMessageAction;
 import burp.api.montoya.websocket.WebSocket;
 import burp.ui.BListTableModel;
-import burp.ui.BReadOnlyTableModel;
 import burp.ui.BResultsModel;
 
 /**
  *
  * @author kali
  */
-public class FuzzTab extends javax.swing.JPanel {
+public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
 
-    private final String MARKER = "§";
+    public static final String MARKER = "§";
 
     private MontoyaApi api;
-    private WebSocket socket;
     private Direction direction;
-    private List<Position> positions = new ArrayList<>();
     private int positionCount = 0;
+    private List<Position> allPositions = new ArrayList<>();
     private BListTableModel payloadsModel = new BListTableModel();
     private BResultsModel resultsModel = new BResultsModel();
-    private DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
-    private WebSocketMessageEditor contentEditor;
+    private WebSocketMessageEditor messageViewer;
+    private Runner runner = null;
+    private Settings settings;
+    private Registration messageRegistration;
 
     private Position getSelectedPosition() {
         int index = positionsComboBox.getSelectedIndex();
@@ -61,7 +59,7 @@ public class FuzzTab extends javax.swing.JPanel {
             return null;
         }
 
-        return positions.get(index);
+        return allPositions.get(index);
     }
 
     private void updateHighlights(List<DocumentRange> ranges) {
@@ -106,11 +104,11 @@ public class FuzzTab extends javax.swing.JPanel {
             DocumentRange range = ranges.get(i);
 
             Position position = null;
-            if (i > positions.size() - 1) {
+            if (i > allPositions.size() - 1) {
                 position = new Position();
-                positions.add(position);
+                allPositions.add(position);
             } else {
-                position = positions.get(i);
+                position = allPositions.get(i);
             }
 
             position.setIndex(i);
@@ -127,7 +125,7 @@ public class FuzzTab extends javax.swing.JPanel {
 
         positionsComboBox.removeAllItems();
         for (int i = 0; i < positionCount; i++) {
-            positionsComboBox.addItem(positions.get(i));
+            positionsComboBox.addItem(allPositions.get(i));
         }
 
         if (positionCount == 0) {
@@ -142,7 +140,7 @@ public class FuzzTab extends javax.swing.JPanel {
         selectedPositionChanged();
     }
 
-    private void addToPayloadList(String item) {
+    private void addPayload(String item) {
         Position position = getSelectedPosition();
         if (position == null) {
             return;
@@ -197,15 +195,28 @@ public class FuzzTab extends javax.swing.JPanel {
         payloadCountLabel.setText(Integer.toString(payloadsModel.getRowCount()));
     }
 
+    @Override
+    public TextMessageAction handleTextMessage(TextMessage textMessage) {
+        if (textMessage.direction() != direction) {
+            resultsModel.addResult(textMessage.direction(), -1, "", textMessage.payload());
+        }
+        return TextMessageAction.continueWith(textMessage);
+    }
+
+    @Override
+    public BinaryMessageAction handleBinaryMessage(BinaryMessage binaryMessage) {
+        return BinaryMessageAction.continueWith(binaryMessage);
+    }
+
     /**
      * Creates new form FuzzTab
      */
     public FuzzTab(MontoyaApi api, WebSocket socket, String url, TextMessage message) {
         this.api = api;
-        this.socket = socket;
+        this.settings = new Settings(api, socket, direction);
         this.direction = message.direction();
         
-        contentEditor = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
+        messageViewer = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
 
         initComponents();
 
@@ -214,41 +225,38 @@ public class FuzzTab extends javax.swing.JPanel {
         payloadsModel.addColumn("TEMP");
         payloadsTable.setTableHeader(null);
 
-        resultsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent arg0) {
-                if (arg0.getValueIsAdjusting()) {
-                    return;
-                }
-
-                int row = resultsTable.getRowSorter().convertRowIndexToModel(resultsTable.getSelectedRow());
-                String msg = resultsModel.getRow(row).message;
-                contentEditor.setContents(ByteArray.byteArray(msg));
+        // Set the messageViewer content every time a new row is selected
+        resultsTable.getSelectionModel().addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting()) {
+                return;
             }
+
+            int row = resultsTable.getRowSorter().convertRowIndexToModel(resultsTable.getSelectedRow());
+            String msg = resultsModel.getRow(row).message;
+            messageViewer.setContents(ByteArray.byteArray(msg));
         });
         resultsTable.getColumn("Payload").setPreferredWidth(300);
 
-        jTabbedPane1.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                startAttackBtn.getParent().remove(startAttackBtn);
+        // Ensure the start attack button is in the same place for every tab
+        jTabbedPane1.addChangeListener(e -> {
+            startAttackBtn.getParent().remove(startAttackBtn);
 
-                java.awt.GridBagConstraints constraints = new java.awt.GridBagConstraints();
+            java.awt.GridBagConstraints constraints = new java.awt.GridBagConstraints();
 
-                constraints.anchor = java.awt.GridBagConstraints.LINE_END;
-                constraints.insets = new java.awt.Insets(0, 0, 0, 5);
-                constraints.gridy = 0;
+            constraints.anchor = java.awt.GridBagConstraints.LINE_END;
+            constraints.insets = new java.awt.Insets(0, 0, 0, 5);
+            constraints.gridy = 0;
 
-                int selected = jTabbedPane1.getSelectedIndex();
-                if (selected == 0) {
-                    constraints.gridx = 2;
-                    positionsPanel.add(startAttackBtn, constraints);
-                } else if (selected == 1) {
-                    constraints.gridx = 5;
-                    payloadsPanel.add(startAttackBtn, constraints);
-                } else if (selected == 2) {
-                    constraints.gridx = 2;
-                    settingsPanel.add(startAttackBtn, constraints);
-                }
+            int selected = jTabbedPane1.getSelectedIndex();
+            if (selected == 0) {
+                constraints.gridx = 2;
+                positionsPanel.add(startAttackBtn, constraints);
+            } else if (selected == 1) {
+                constraints.gridx = 5;
+                payloadsPanel.add(startAttackBtn, constraints);
+            } else if (selected == 2) {
+                constraints.gridx = 2;
+                settingsPanel.add(startAttackBtn, constraints);
             }
         });
     }
@@ -313,7 +321,7 @@ public class FuzzTab extends javax.swing.JPanel {
         filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         settingsPanel = new javax.swing.JPanel();
         jLabel12 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
+        delayTextField = new javax.swing.JTextField();
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jLabel13 = new javax.swing.JLabel();
 
@@ -365,7 +373,7 @@ public class FuzzTab extends javax.swing.JPanel {
 
         contentContainer.setLayout(new java.awt.BorderLayout());
 
-        contentContainer.add(contentEditor.uiComponent(), java.awt.BorderLayout.CENTER);
+        contentContainer.add(messageViewer.uiComponent(), java.awt.BorderLayout.CENTER);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -712,19 +720,21 @@ public class FuzzTab extends javax.swing.JPanel {
 
         settingsPanel.setLayout(new java.awt.GridBagLayout());
 
-        jLabel12.setText("Delay:");
+        jLabel12.setText("Delay (ms):");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         settingsPanel.add(jLabel12, gridBagConstraints);
+
+        delayTextField.setText(Integer.toString(settings.getDelay()));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 0.3;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 0);
-        settingsPanel.add(jTextField1, gridBagConstraints);
+        settingsPanel.add(delayTextField, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 2;
@@ -810,7 +820,7 @@ public class FuzzTab extends javax.swing.JPanel {
 
                 while (line != null) {
                     // Add line to list and model
-                    addToPayloadList(line);
+                    addPayload(line);
                     line = reader.readLine();
                 }
 
@@ -844,7 +854,7 @@ public class FuzzTab extends javax.swing.JPanel {
             return;
         }
 
-        addToPayloadList(payload);
+        addPayload(payload);
         payloadTextBox.setText("");
         payloadTextBox.grabFocus();
     }//GEN-LAST:event_addPayloadBtnActionPerformed
@@ -860,7 +870,7 @@ public class FuzzTab extends javax.swing.JPanel {
 
         try {
             String clipboard = (String)Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
-            clipboard.lines().forEach(item -> addToPayloadList(item));
+            clipboard.lines().forEach(item -> addPayload(item));
         } catch (Exception e) {
             api.logging().logToError(e);
         }
@@ -887,6 +897,52 @@ public class FuzzTab extends javax.swing.JPanel {
     }//GEN-LAST:event_dedupePayloadsBtnActionPerformed
 
     private void startAttackBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startAttackBtnActionPerformed
+        if (runner != null) {
+
+            return;
+        }
+
+
+        if (positionCount == 0) {
+            // TODO: Display error message
+
+            return;
+        }
+
+        Position[] positions = new Position[positionCount];
+        for (int i = 0; i < positionCount; i++) {
+            Position position = allPositions.get(i);
+            if (position.getPayloads().size() == 0) {
+                // TODO: Display error message
+                return;
+            }
+
+            positions[i] = position;
+        }
+
+        settings.setPositions(positions);
+        settings.setMessage(messageEditor.getText());
+        try {
+            settings.setDelay(Integer.parseInt(delayTextField.getText()));
+        } catch (NumberFormatException e) {
+            // TODO: Display error message
+            return;
+        }
+
+        runner = new Runner(settings);
+        Thread thread = new Thread(runner);
+
+        messageRegistration = settings.getSocket().registerMessageHandler(this);
+        runner.setMessageListener(e -> {
+            resultsModel.addResult(e.getDirection(), e.getPosition(), e.getPayload(), e.getMessage());
+        });
+        runner.setDoneListener(() -> {
+            messageRegistration.deregister();
+            // TODO: Change button states, etc.
+            runner = null;
+        });
+
+        thread.start();
     }//GEN-LAST:event_startAttackBtnActionPerformed
 
 
@@ -897,6 +953,7 @@ public class FuzzTab extends javax.swing.JPanel {
     private javax.swing.JButton clearPayloadsBtn;
     private javax.swing.JPanel contentContainer;
     private javax.swing.JButton dedupePayloadsBtn;
+    private javax.swing.JTextField delayTextField;
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
     private javax.swing.Box.Filler filler3;
@@ -923,7 +980,6 @@ public class FuzzTab extends javax.swing.JPanel {
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTextField jTextField1;
     private javax.swing.JButton loadPayloadsBtn;
     private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea messageEditor;
     private javax.swing.JButton pastePayloadsBtn;
