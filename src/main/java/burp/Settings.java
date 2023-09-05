@@ -1,7 +1,6 @@
 package burp;
 
 import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.websocket.Direction;
 import burp.api.montoya.websocket.WebSocket;
 
 public class Settings {
@@ -34,19 +33,13 @@ public class Settings {
 		return socket;
 	}
 
-	private final Direction direction;
-	public Direction getDirection() {
-		return direction;
-	}
-
 	private final MontoyaApi api;
 	public MontoyaApi getApi() {
 		return api;
 	}
 
-	public Settings(MontoyaApi api, WebSocket socket, Direction direction) {
+	public Settings(MontoyaApi api, WebSocket socket) {
 		this.socket = socket;
 		this.api = api;
-		this.direction = direction;
 	}
 }

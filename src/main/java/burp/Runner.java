@@ -4,8 +4,6 @@ import java.util.EventListener;
 import java.util.EventObject;
 import java.util.List;
 
-import burp.api.montoya.websocket.Direction;
-
 public class Runner implements Runnable {
 	private final Settings settings;
 
@@ -78,8 +76,12 @@ public class Runner implements Runnable {
 				String message = position.replace(settings.getMessage(), payload, 0);
 				message = message.replaceAll(FuzzTab.MARKER, "");
 
-				settings.getSocket().sendTextMessage(message);
-				messageListener.messageSent(new SentEvent(message, payload, currentPosition, settings.getDirection()));
+				try {
+					settings.getSocket().sendTextMessage(message);
+					messageListener.messageSent(new SentEvent(message, payload, currentPosition + 1));
+				} catch (Exception e) {
+					settings.getApi().logging().logToError(e);
+				}
 
 				try {
 					Thread.sleep(settings.getDelay());
@@ -90,7 +92,7 @@ public class Runner implements Runnable {
 
 			// Reset the current payload only if we actually got to the end of the payloads
 			// Otherwise, we keep at the same position so we can resume
-			if (currentPayload == payloads.size() - 1) {
+			if (currentPayload >= payloads.size()) {
 				currentPayload = 0;
 			}
 		}
@@ -131,23 +133,17 @@ public class Runner implements Runnable {
 			return position;
 		}
 
-		private final Direction direction;
-		public Direction getDirection() {
-			return direction;
-		}
-
 		private final String payload;
 		public String getPayload() {
 			return payload;
 		}
 
-		public SentEvent(String message, String payload, int position, Direction direction) {
+		public SentEvent(String message, String payload, int position) {
 			super(message);
 
 			this.message = message;
 			this.payload = payload;
 			this.position = position;
-			this.direction = direction;
 		}
 	}
 }

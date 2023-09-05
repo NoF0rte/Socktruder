@@ -31,8 +31,7 @@ import burp.api.montoya.websocket.MessageHandler;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.TextMessageAction;
 import burp.api.montoya.websocket.WebSocket;
-import burp.ui.BListTableModel;
-import burp.ui.BResultsModel;
+import burp.ui.*;
 
 /**
  *
@@ -43,12 +42,13 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     public static final String MARKER = "§";
 
     private MontoyaApi api;
-    private Direction direction;
     private int positionCount = 0;
     private List<Position> allPositions = new ArrayList<>();
     private BListTableModel payloadsModel = new BListTableModel();
-    private BResultsModel resultsModel = new BResultsModel();
-    private WebSocketMessageEditor messageViewer;
+    private ToServerModel toServerModel = new ToServerModel();
+    private ToClientModel toClientModel = new ToClientModel();
+    private WebSocketMessageEditor toServerViewer;
+    private WebSocketMessageEditor toClientViewer;
     private Runner runner = null;
     private Settings settings;
     private Registration messageRegistration;
@@ -197,8 +197,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
 
     @Override
     public TextMessageAction handleTextMessage(TextMessage textMessage) {
-        if (textMessage.direction() != direction) {
-            resultsModel.addResult(textMessage.direction(), -1, "", textMessage.payload());
+        if (textMessage.direction() == Direction.SERVER_TO_CLIENT) {
+            toClientModel.addRow(textMessage.payload());
         }
         return TextMessageAction.continueWith(textMessage);
     }
@@ -213,29 +213,44 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
      */
     public FuzzTab(MontoyaApi api, WebSocket socket, String url, TextMessage message) {
         this.api = api;
-        this.settings = new Settings(api, socket, direction);
-        this.direction = message.direction();
+        this.settings = new Settings(api, socket);
         
-        messageViewer = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
+        toServerViewer = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
+        toClientViewer = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
 
         initComponents();
+
+        jSplitPane3.setDividerLocation(-1);
 
         targetTextField.setText(url);
         messageEditor.setText(message.payload().replace(Config.SEND_KEYWORD, ""));
         payloadsModel.addColumn("TEMP");
         payloadsTable.setTableHeader(null);
 
-        // Set the messageViewer content every time a new row is selected
-        resultsTable.getSelectionModel().addListSelectionListener(e -> {
+        // Set the toServerViewer content every time a new row is selected
+        toServerTable.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) {
                 return;
             }
 
-            int row = resultsTable.getRowSorter().convertRowIndexToModel(resultsTable.getSelectedRow());
-            String msg = resultsModel.getRow(row).message;
-            messageViewer.setContents(ByteArray.byteArray(msg));
+            int row = toServerTable.getRowSorter().convertRowIndexToModel(toServerTable.getSelectedRow());
+            String msg = toServerModel.getRow(row).message;
+            toServerViewer.setContents(ByteArray.byteArray(msg));
         });
-        resultsTable.getColumn("Payload").setPreferredWidth(300);
+        toServerTable.getColumn("Message").setPreferredWidth(150);
+        toServerTable.getColumn("Time").setPreferredWidth(150);
+
+        toClientTable.getSelectionModel().addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting()) {
+                return;
+            }
+
+            int row = toClientTable.getRowSorter().convertRowIndexToModel(toClientTable.getSelectedRow());
+            String msg = toClientModel.getRow(row).message;
+            toClientViewer.setContents(ByteArray.byteArray(msg));
+        });
+        toClientTable.getColumn("Message").setPreferredWidth(150);
+        toClientTable.getColumn("Time").setPreferredWidth(150);
 
         // Ensure the start attack button is in the same place for every tab
         jTabbedPane1.addChangeListener(e -> {
@@ -272,14 +287,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         java.awt.GridBagConstraints gridBagConstraints;
 
         jSplitPane1 = new javax.swing.JSplitPane();
-        jSplitPane2 = new javax.swing.JSplitPane();
-        jPanel3 = new javax.swing.JPanel();
-        jLabel10 = new javax.swing.JLabel();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        resultsTable = new javax.swing.JTable();
-        jPanel4 = new javax.swing.JPanel();
-        jLabel11 = new javax.swing.JLabel();
-        contentContainer = new javax.swing.JPanel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         positionsPanel = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -324,69 +331,29 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         delayTextField = new javax.swing.JTextField();
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jLabel13 = new javax.swing.JLabel();
+        jSplitPane3 = new javax.swing.JSplitPane();
+        jSplitPane2 = new javax.swing.JSplitPane();
+        jPanel3 = new javax.swing.JPanel();
+        jLabel10 = new javax.swing.JLabel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        toServerTable = new javax.swing.JTable();
+        jPanel4 = new javax.swing.JPanel();
+        jLabel11 = new javax.swing.JLabel();
+        toServerViewContainer = new javax.swing.JPanel();
+        jSplitPane4 = new javax.swing.JSplitPane();
+        jPanel5 = new javax.swing.JPanel();
+        jLabel14 = new javax.swing.JLabel();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        toClientTable = new javax.swing.JTable();
+        jPanel6 = new javax.swing.JPanel();
+        jLabel15 = new javax.swing.JLabel();
+        toClientViewerContainer = new javax.swing.JPanel();
 
         setLayout(new java.awt.BorderLayout());
 
-        jSplitPane1.setResizeWeight(0.5);
+        jSplitPane1.setResizeWeight(0.4);
         jSplitPane1.setMinimumSize(new java.awt.Dimension(0, 0));
         jSplitPane1.setPreferredSize(new java.awt.Dimension(0, 0));
-
-        jSplitPane2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 20, 10));
-        jSplitPane2.setDividerLocation(250);
-        jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-        jSplitPane2.setMinimumSize(new java.awt.Dimension(0, 0));
-        jSplitPane2.setPreferredSize(new java.awt.Dimension(0, 0));
-
-        jPanel3.setLayout(new java.awt.GridBagLayout());
-
-        jLabel10.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
-        jLabel10.setText("Fuzz");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
-        jPanel3.add(jLabel10, gridBagConstraints);
-
-        resultsTable.setAutoCreateRowSorter(true);
-        resultsTable.setModel(resultsModel);
-        resultsTable.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
-        resultsTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        resultsTable.getTableHeader().setReorderingAllowed(false);
-        jScrollPane2.setViewportView(resultsTable);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 0.9;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanel3.add(jScrollPane2, gridBagConstraints);
-
-        jSplitPane2.setTopComponent(jPanel3);
-
-        jPanel4.setLayout(new java.awt.GridBagLayout());
-
-        jLabel11.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
-        jLabel11.setText("Content");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
-        jPanel4.add(jLabel11, gridBagConstraints);
-
-        contentContainer.setLayout(new java.awt.BorderLayout());
-
-        contentContainer.add(messageViewer.uiComponent(), java.awt.BorderLayout.CENTER);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 0.9;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanel4.add(contentContainer, gridBagConstraints);
-
-        jSplitPane2.setRightComponent(jPanel4);
-
-        jSplitPane1.setRightComponent(jSplitPane2);
 
         jTabbedPane1.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 10, 20, 5));
         jTabbedPane1.setMinimumSize(new java.awt.Dimension(0, 0));
@@ -758,6 +725,126 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
 
         jSplitPane1.setLeftComponent(jTabbedPane1);
 
+        jSplitPane3.setDividerLocation(400);
+        jSplitPane3.setResizeWeight(0.5);
+        jSplitPane3.setPreferredSize(new java.awt.Dimension(0, 0));
+
+        jSplitPane2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 20, 0));
+        jSplitPane2.setDividerLocation(250);
+        jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        jSplitPane2.setMinimumSize(new java.awt.Dimension(0, 0));
+        jSplitPane2.setPreferredSize(new java.awt.Dimension(0, 0));
+
+        jPanel3.setLayout(new java.awt.GridBagLayout());
+
+        jLabel10.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel10.setText("To Server");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        jPanel3.add(jLabel10, gridBagConstraints);
+
+        toServerTable.setAutoCreateRowSorter(true);
+        toServerTable.setModel(toServerModel);
+        toServerTable.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
+        toServerTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        toServerTable.getTableHeader().setReorderingAllowed(false);
+        jScrollPane2.setViewportView(toServerTable);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel3.add(jScrollPane2, gridBagConstraints);
+
+        jSplitPane2.setTopComponent(jPanel3);
+
+        jPanel4.setLayout(new java.awt.GridBagLayout());
+
+        jLabel11.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel11.setText("Content");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        jPanel4.add(jLabel11, gridBagConstraints);
+
+        toServerViewContainer.setLayout(new java.awt.BorderLayout());
+
+        toServerViewContainer.add(toServerViewer.uiComponent(), java.awt.BorderLayout.CENTER);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel4.add(toServerViewContainer, gridBagConstraints);
+
+        jSplitPane2.setRightComponent(jPanel4);
+
+        jSplitPane3.setLeftComponent(jSplitPane2);
+
+        jSplitPane4.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 20, 10));
+        jSplitPane4.setDividerLocation(250);
+        jSplitPane4.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        jSplitPane4.setMinimumSize(new java.awt.Dimension(0, 0));
+        jSplitPane4.setPreferredSize(new java.awt.Dimension(0, 0));
+
+        jPanel5.setLayout(new java.awt.GridBagLayout());
+
+        jLabel14.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel14.setText("To Client");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        jPanel5.add(jLabel14, gridBagConstraints);
+
+        toClientTable.setAutoCreateRowSorter(true);
+        toClientTable.setModel(toClientModel);
+        toClientTable.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
+        toClientTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        toClientTable.getTableHeader().setReorderingAllowed(false);
+        jScrollPane3.setViewportView(toClientTable);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel5.add(jScrollPane3, gridBagConstraints);
+
+        jSplitPane4.setTopComponent(jPanel5);
+
+        jPanel6.setLayout(new java.awt.GridBagLayout());
+
+        jLabel15.setFont(new java.awt.Font("Cantarell", 1, 16)); // NOI18N
+        jLabel15.setText("Content");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        jPanel6.add(jLabel15, gridBagConstraints);
+
+        toClientViewerContainer.setLayout(new java.awt.BorderLayout());
+
+        toClientViewerContainer.add(toClientViewer.uiComponent(), java.awt.BorderLayout.CENTER);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel6.add(toClientViewerContainer, gridBagConstraints);
+
+        jSplitPane4.setRightComponent(jPanel6);
+
+        jSplitPane3.setRightComponent(jSplitPane4);
+
+        jSplitPane1.setRightComponent(jSplitPane3);
+
         add(jSplitPane1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -934,7 +1021,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
 
         messageRegistration = settings.getSocket().registerMessageHandler(this);
         runner.setMessageListener(e -> {
-            resultsModel.addResult(e.getDirection(), e.getPosition(), e.getPayload(), e.getMessage());
+            toServerModel.addRow(e.getMessage(), e.getPosition(), e.getPayload());
         });
         runner.setDoneListener(() -> {
             messageRegistration.deregister();
@@ -951,7 +1038,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private javax.swing.JButton addPayloadBtn;
     private javax.swing.JButton clearMarkersBtn;
     private javax.swing.JButton clearPayloadsBtn;
-    private javax.swing.JPanel contentContainer;
     private javax.swing.JButton dedupePayloadsBtn;
     private javax.swing.JTextField delayTextField;
     private javax.swing.Box.Filler filler1;
@@ -962,6 +1048,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -974,11 +1062,16 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JSplitPane jSplitPane2;
+    private javax.swing.JSplitPane jSplitPane3;
+    private javax.swing.JSplitPane jSplitPane4;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JButton loadPayloadsBtn;
     private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea messageEditor;
@@ -991,9 +1084,12 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private javax.swing.JPanel positionsPanel;
     private org.fife.ui.rtextarea.RTextScrollPane rTextScrollPane1;
     private javax.swing.JButton removePayloadBtn;
-    private javax.swing.JTable resultsTable;
     private javax.swing.JPanel settingsPanel;
     private javax.swing.JButton startAttackBtn;
     private javax.swing.JTextField targetTextField;
+    private javax.swing.JTable toClientTable;
+    private javax.swing.JPanel toClientViewerContainer;
+    private javax.swing.JTable toServerTable;
+    private javax.swing.JPanel toServerViewContainer;
     // End of variables declaration//GEN-END:variables
 }
