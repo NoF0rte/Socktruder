@@ -44,25 +44,42 @@ public class SuiteTab extends javax.swing.JPanel {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+        java.awt.GridBagConstraints gridBagConstraints;
 
+        instructionsPanel = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
 
         setLayout(new javax.swing.OverlayLayout(this));
+
+        instructionsPanel.setLayout(new java.awt.GridBagLayout());
+
+        jLabel1.setFont(new java.awt.Font("Cantarell", 1, 36)); // NOI18N
+        jLabel1.setText(Extension.EXTENSION_NAME);
+        instructionsPanel.add(jLabel1, new java.awt.GridBagConstraints());
+
+        jLabel2.setFont(new java.awt.Font("Cantarell", 0, 18)); // NOI18N
+        jLabel2.setText("To create a tab, send a WebSocket message in Repeater containing the words [WS_FUZZER]");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridy = 1;
+        instructionsPanel.add(jLabel2, gridBagConstraints);
+
+        add(instructionsPanel);
         add(jTabbedPane1);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel instructionsPanel;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JTabbedPane jTabbedPane1;
     // End of variables declaration//GEN-END:variables
 
     public void addFuzzTab(WebSocket socket, String url, TextMessage message) {
-        try {
-            FuzzTab tab = new FuzzTab(api, socket, url, message);
-            jTabbedPane1.addTab(Integer.toString(tabNumber++), tab);
-            // TODO: message box that says it was sent to WS Fuzzer
-        } catch (Exception e) {
-            // TODO: message box that says it sending to WS Fuzzer failed
-        }
+        FuzzTab tab = new FuzzTab(api, socket, url, message);
+        jTabbedPane1.addTab(Integer.toString(tabNumber++), tab);
+        instructionsPanel.setVisible(false);
     }
 }

@@ -1,12 +1,13 @@
 package burp;
 
+import javax.swing.JOptionPane;
+
 import burp.api.montoya.core.Registration;
 import burp.api.montoya.websocket.*;
 
 public class SocketMessageListener implements MessageHandler {
 	private final WebSocket socket;
 	private final String url;
-
 	private Registration registration;
 	public void setRegistration(Registration registration) {
 		this.registration = registration;
@@ -20,9 +21,16 @@ public class SocketMessageListener implements MessageHandler {
 	@Override
 	public TextMessageAction handleTextMessage(TextMessage textMessage) {
 		if (textMessage.payload().contains(Config.SEND_KEYWORD)) {
-			SuiteTab.get().addFuzzTab(socket, url, textMessage);
-			if (registration.isRegistered()) {
-				registration.deregister();
+			try {
+				int res = JOptionPane.showConfirmDialog(null, "Send WebSocket message to " + Extension.EXTENSION_NAME + "?", Extension.EXTENSION_NAME, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if (res == JOptionPane.YES_OPTION) {
+					SuiteTab.get().addFuzzTab(socket, url, textMessage);
+					if (registration.isRegistered()) {
+						registration.deregister();
+					}
+				}
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, "Error adding fuzz tab: " + e.getMessage(), Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
 			}
 
 			return TextMessageAction.drop();

@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.RowSorter;
 
 import java.awt.Toolkit;
@@ -278,7 +279,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         try {
             runner.setDelay(Integer.parseInt(delayTextField.getText()));
         } catch (NumberFormatException e) {
-            // TODO: Display error message
+            showError("Error parsing delay: " + e.getMessage());
             return;
         }
 
@@ -297,8 +298,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
 
     private boolean validateAttackSettings() {
         if (positionCount == 0) {
-            // TODO: Display error message
-
+            showError("Payload positions must be defined!");
             return false;
         }
 
@@ -306,7 +306,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         for (int i = 0; i < positionCount; i++) {
             Position position = allPositions.get(i);
             if (position.getPayloads().size() == 0) {
-                // TODO: Display error message
+                showError(String.format("No payloads defined for position %s ", position.toString()));
                 return false;
             }
 
@@ -318,11 +318,15 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         try {
             settings.setDelay(Integer.parseInt(delayTextField.getText()));
         } catch (NumberFormatException e) {
-            // TODO: Display error message
+            showError("Error parsing delay: " + e.getMessage());
             return false;
         }
 
         return true;
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(api.userInterface().swingUtils().suiteFrame(), message, Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
     }
 
     @Override
