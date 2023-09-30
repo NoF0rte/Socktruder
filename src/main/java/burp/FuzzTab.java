@@ -10,7 +10,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import javax.swing.JFileChooser;
@@ -55,6 +55,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private Settings settings;
     private Registration messageRegistration;
     private TableRowHighlighter cellRenderer;
+    private boolean updatingToServer = false;
 
     private Position getSelectedPosition() {
         int index = positionsComboBox.getSelectedIndex();
@@ -201,6 +202,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private void updateToClientHighlight(boolean scrollIntoView) {
             int serverRowNum = toServerTable.getRowSorter().convertRowIndexToModel(toServerTable.getSelectedRow());
 
+            // Find the row in the client table who is the closest time after the selected server row
             ToServerModel.Row serverRow = toServerModel.getRow(serverRowNum);
             ArrayList<ToClientModel.Row> allRows = toClientModel.getRows();
             int rowToHighlight = -1;
@@ -221,6 +223,106 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
             if (scrollIntoView && rowToHighlight != -1) {
                 toClientTable.scrollRectToVisible(toClientTable.getCellRect(sorter.convertRowIndexToView(rowToHighlight), 1, true));
             }
+    }
+
+    private void startAttack() {
+        if (!validateAttackSettings()) {
+            return;
+        }
+
+        startPauseAttackBtn.setText("Pause");
+        stopAttackBtn.setEnabled(true);
+        messageEditor.setEnabled(false);
+        addMarkerBtn.setEnabled(false);
+        clearMarkersBtn.setEnabled(false);
+        pastePayloadsBtn.setEnabled(false);
+        loadPayloadsBtn.setEnabled(false);
+        removePayloadBtn.setEnabled(false);
+        clearPayloadsBtn.setEnabled(false);
+        dedupePayloadsBtn.setEnabled(false);
+        addPayloadBtn.setEnabled(false);
+        delayTextField.setEnabled(false);
+
+        runner = new Runner(settings);
+        Thread thread = new Thread(runner);
+
+        messageRegistration = settings.getSocket().registerMessageHandler(this);
+        runner.setMessageListener(e -> {
+            updatingToServer = true;
+            toServerModel.addRow(e.getMessage(), e.getPosition(), e.getPayload());
+            updatingToServer = false;
+        });
+        runner.setDoneListener(() -> {
+            messageRegistration.deregister();
+            runner = null;
+
+            startPauseAttackBtn.setText("Start attack");
+
+            stopAttackBtn.setEnabled(false);
+            messageEditor.setEnabled(true);
+            addMarkerBtn.setEnabled(true);
+            clearMarkersBtn.setEnabled(true);
+            pastePayloadsBtn.setEnabled(true);
+            loadPayloadsBtn.setEnabled(true);
+            removePayloadBtn.setEnabled(true);
+            clearPayloadsBtn.setEnabled(true);
+            dedupePayloadsBtn.setEnabled(true);
+            addPayloadBtn.setEnabled(true);
+            delayTextField.setEnabled(true);
+        });
+
+        thread.start();
+    }
+
+    private void resumeAttack() {
+        try {
+            runner.setDelay(Integer.parseInt(delayTextField.getText()));
+        } catch (NumberFormatException e) {
+            // TODO: Display error message
+            return;
+        }
+
+        startPauseAttackBtn.setText("Pause");
+        delayTextField.setEnabled(false);
+
+        Thread thread = new Thread(runner);
+        thread.start();
+    }
+
+    private void pauseAttack() {
+        runner.pause();
+        startPauseAttackBtn.setText("Resume");
+        delayTextField.setEnabled(true);
+    }
+
+    private boolean validateAttackSettings() {
+        if (positionCount == 0) {
+            // TODO: Display error message
+
+            return false;
+        }
+
+        Position[] positions = new Position[positionCount];
+        for (int i = 0; i < positionCount; i++) {
+            Position position = allPositions.get(i);
+            if (position.getPayloads().size() == 0) {
+                // TODO: Display error message
+                return false;
+            }
+
+            positions[i] = position;
+        }
+
+        settings.setPositions(positions);
+        settings.setMessage(messageEditor.getText());
+        try {
+            settings.setDelay(Integer.parseInt(delayTextField.getText()));
+        } catch (NumberFormatException e) {
+            // TODO: Display error message
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -259,7 +361,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
 
         // Set the toServerViewer content every time a new row is selected
         toServerTable.getSelectionModel().addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting()) {
+            if (e.getValueIsAdjusting() || updatingToServer) {
                 return;
             }
 
@@ -272,6 +374,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         });
         toServerTable.getColumn("Message").setPreferredWidth(150);
         toServerTable.getColumn("Time").setPreferredWidth(150);
+        
 
         toClientTable.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) {
@@ -287,29 +390,30 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         toClientTable.setDefaultRenderer(Object.class, cellRenderer);
         toClientTable.setDefaultRenderer(Integer.class, cellRenderer);
         toClientTable.getRowSorter().addRowSorterListener(e -> {
-            updateToClientHighlight(false);
+            updateToClientHighlight(false); // Whenever the table is sorted, we need to update which row is highlighted
         });
 
-        // Ensure the start attack button is in the same place for every tab
+        // Ensure the start attack panel is in the same place for every tab
         jTabbedPane1.addChangeListener(e -> {
-            startAttackBtn.getParent().remove(startAttackBtn);
+            attackPanel.getParent().remove(attackPanel);
 
             java.awt.GridBagConstraints constraints = new java.awt.GridBagConstraints();
 
             constraints.anchor = java.awt.GridBagConstraints.LINE_END;
-            constraints.insets = new java.awt.Insets(0, 0, 0, 5);
+            // constraints.insets = new java.awt.Insets(0, 0, 0, 5);
             constraints.gridy = 0;
 
             int selected = jTabbedPane1.getSelectedIndex();
             if (selected == 0) {
                 constraints.gridx = 2;
-                positionsPanel.add(startAttackBtn, constraints);
+                constraints.gridwidth = 2;
+                positionsPanel.add(attackPanel, constraints);
             } else if (selected == 1) {
                 constraints.gridx = 5;
-                payloadsPanel.add(startAttackBtn, constraints);
+                payloadsPanel.add(attackPanel, constraints);
             } else if (selected == 2) {
                 constraints.gridx = 2;
-                settingsPanel.add(startAttackBtn, constraints);
+                settingsPanel.add(attackPanel, constraints);
             }
         });
     }
@@ -330,7 +434,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
-        startAttackBtn = new javax.swing.JButton();
         targetTextField = new javax.swing.JTextField();
         rTextScrollPane1 = new org.fife.ui.rtextarea.RTextScrollPane();
         javax.swing.text.JTextComponent.removeKeymap("RTextAreaKeymap");
@@ -343,6 +446,10 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         addMarkerBtn = new javax.swing.JButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10));
         clearMarkersBtn = new javax.swing.JButton();
+        attackPanel = new javax.swing.JPanel();
+        stopAttackBtn = new javax.swing.JButton();
+        filler4 = new javax.swing.Box.Filler(new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 32767));
+        startPauseAttackBtn = new javax.swing.JButton();
         payloadsPanel = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
@@ -418,7 +525,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LAST_LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 0, 15, 0);
         positionsPanel.add(jLabel2, gridBagConstraints);
@@ -429,26 +536,11 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         gridBagConstraints.gridy = 2;
         positionsPanel.add(jLabel3, gridBagConstraints);
 
-        startAttackBtn.setBackground(new java.awt.Color(255, 102, 51));
-        startAttackBtn.setFont(new java.awt.Font("Cantarell", 1, 15)); // NOI18N
-        startAttackBtn.setForeground(new java.awt.Color(255, 255, 255));
-        startAttackBtn.setText("Start attack");
-        startAttackBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                startAttackBtnActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
-        positionsPanel.add(startAttackBtn, gridBagConstraints);
-
         targetTextField.setEditable(false);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LAST_LINE_START;
         gridBagConstraints.weightx = 0.9;
@@ -471,7 +563,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.gridheight = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
@@ -505,12 +597,43 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         jPanel1.add(clearMarkersBtn);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         positionsPanel.add(jPanel1, gridBagConstraints);
+
+        attackPanel.setLayout(new javax.swing.BoxLayout(attackPanel, javax.swing.BoxLayout.LINE_AXIS));
+
+        stopAttackBtn.setFont(new java.awt.Font("Cantarell", 1, 15)); // NOI18N
+        stopAttackBtn.setText("Stop");
+        stopAttackBtn.setEnabled(false);
+        stopAttackBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                stopAttackBtnActionPerformed(evt);
+            }
+        });
+        attackPanel.add(stopAttackBtn);
+        attackPanel.add(filler4);
+
+        startPauseAttackBtn.setBackground(new java.awt.Color(255, 102, 51));
+        startPauseAttackBtn.setFont(new java.awt.Font("Cantarell", 1, 15)); // NOI18N
+        startPauseAttackBtn.setForeground(new java.awt.Color(255, 255, 255));
+        startPauseAttackBtn.setText("Start attack");
+        startPauseAttackBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                startPauseAttackBtnActionPerformed(evt);
+            }
+        });
+        attackPanel.add(startPauseAttackBtn);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
+        positionsPanel.add(attackPanel, gridBagConstraints);
 
         jTabbedPane1.addTab("Positions", positionsPanel);
 
@@ -1008,7 +1131,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         }
 
         List<String> payloads = position.getPayloads();
-        HashSet<String> set = new HashSet<>(payloads);
+        LinkedHashSet<String> set = new LinkedHashSet<>(payloads);
 
         payloads.clear();
         payloadsModel.clear();
@@ -1021,59 +1144,32 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         updateCountLabel();
     }//GEN-LAST:event_dedupePayloadsBtnActionPerformed
 
-    private void startAttackBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startAttackBtnActionPerformed
+    private void startPauseAttackBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startPauseAttackBtnActionPerformed
         if (runner != null) {
-
-            return;
-        }
-
-
-        if (positionCount == 0) {
-            // TODO: Display error message
-
-            return;
-        }
-
-        Position[] positions = new Position[positionCount];
-        for (int i = 0; i < positionCount; i++) {
-            Position position = allPositions.get(i);
-            if (position.getPayloads().size() == 0) {
-                // TODO: Display error message
-                return;
+            if (runner.isPaused()) {
+                resumeAttack();
+            } else if (runner.isRunning()) {
+                pauseAttack();
             }
-
-            positions[i] = position;
-        }
-
-        settings.setPositions(positions);
-        settings.setMessage(messageEditor.getText());
-        try {
-            settings.setDelay(Integer.parseInt(delayTextField.getText()));
-        } catch (NumberFormatException e) {
-            // TODO: Display error message
             return;
         }
 
-        runner = new Runner(settings);
-        Thread thread = new Thread(runner);
+        startAttack();
+    }//GEN-LAST:event_startPauseAttackBtnActionPerformed
 
-        messageRegistration = settings.getSocket().registerMessageHandler(this);
-        runner.setMessageListener(e -> {
-            toServerModel.addRow(e.getMessage(), e.getPosition(), e.getPayload());
-        });
-        runner.setDoneListener(() -> {
-            messageRegistration.deregister();
-            // TODO: Change button states, etc.
-            runner = null;
-        });
+    private void stopAttackBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopAttackBtnActionPerformed
+        if (runner == null) {
+            return;
+        }
 
-        thread.start();
-    }//GEN-LAST:event_startAttackBtnActionPerformed
+        runner.stop();
+    }//GEN-LAST:event_stopAttackBtnActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addMarkerBtn;
     private javax.swing.JButton addPayloadBtn;
+    private javax.swing.JPanel attackPanel;
     private javax.swing.JButton clearMarkersBtn;
     private javax.swing.JButton clearPayloadsBtn;
     private javax.swing.JButton dedupePayloadsBtn;
@@ -1081,6 +1177,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
     private javax.swing.Box.Filler filler3;
+    private javax.swing.Box.Filler filler4;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -1123,7 +1220,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private org.fife.ui.rtextarea.RTextScrollPane rTextScrollPane1;
     private javax.swing.JButton removePayloadBtn;
     private javax.swing.JPanel settingsPanel;
-    private javax.swing.JButton startAttackBtn;
+    private javax.swing.JButton startPauseAttackBtn;
+    private javax.swing.JButton stopAttackBtn;
     private javax.swing.JTextField targetTextField;
     private javax.swing.JTable toClientTable;
     private javax.swing.JPanel toClientViewerContainer;

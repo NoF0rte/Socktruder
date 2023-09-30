@@ -18,6 +18,9 @@ public class Runner implements Runnable {
 	}
 	
 	private State state = State.STOPPED;
+	private synchronized State getState(){
+		return this.state;
+	}
 	private synchronized void setState(State state) {
 		this.state = state;
 	}
@@ -29,18 +32,27 @@ public class Runner implements Runnable {
 		this.settings = settings;
 	}
 
+	public synchronized void setDelay(int delay) {
+		this.settings.setDelay(delay);
+	}
+
 	public synchronized boolean isRunning() {
-		return state == State.RUNNING;
+		return getState() == State.RUNNING;
 	}
 	public synchronized boolean isPaused() {
-		return state == State.PAUSED;
+		return getState() == State.PAUSED;
 	}
 	public synchronized boolean isStopped() {
-		return state == State.STOPPED;
+		return getState() == State.STOPPED;
 	}
 
 	public synchronized void stop() {
 		this.settings.getApi().logging().logToOutput("Fuzzer set to stop");
+		if (isPaused()) {
+			cleanup();
+			return;
+		}
+		
 		setState(State.STOPPED);
 	}
 
@@ -56,14 +68,11 @@ public class Runner implements Runnable {
 
 	@Override
 	public void run() {
+		this.settings.getApi().logging().logToOutput("Fuzzer set to run");
 		setState(State.RUNNING);
 
 		Position[] positions = settings.getPositions();
 		for (; currentPosition < positions.length; currentPosition++) {
-			if (!isRunning()) {
-				break;
-			}
-
 			Position position = positions[currentPosition];
 			List<String> payloads = position.getPayloads();
 
@@ -95,6 +104,10 @@ public class Runner implements Runnable {
 			if (currentPayload >= payloads.size()) {
 				currentPayload = 0;
 			}
+
+			if (!isRunning()) {
+				break;
+			}
 		}
 		
 		if (!isPaused()) {
@@ -122,6 +135,7 @@ public class Runner implements Runnable {
 	public interface MessageListener extends EventListener {
 		void messageSent(SentEvent var1);
 	}
+
 	public class SentEvent extends EventObject {
 		private final String message;
 		public String getMessage() {
