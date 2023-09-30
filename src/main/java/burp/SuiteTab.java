@@ -10,7 +10,6 @@ import java.awt.event.ContainerListener;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.WebSocket;
-import burp.ui.CloseableTabComponent;
 
 /**
  *

@@ -27,7 +27,18 @@ public class CloseableTabComponent extends javax.swing.JPanel {
     }
 
     public void setText(String text) {
-        nameLabel.setText(text);
+        nameTextField.setText(text);
+    }
+
+    public void commitRename() {
+        String renamed = nameTextField.getText().strip();
+        if (renamed.equals("") || renamed.isEmpty()) {
+            renamed = " ";
+        }
+
+        setText(renamed);
+        nameTextField.setEditable(false);
+        nameTextField.setFocusable(false);
     }
 
     /**
@@ -47,7 +58,8 @@ public class CloseableTabComponent extends javax.swing.JPanel {
         });
         
         initComponents();
-        nameLabel.setText(title);
+
+        setText(title);
     }
 
     /**
@@ -60,13 +72,10 @@ public class CloseableTabComponent extends javax.swing.JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        nameLabel = new javax.swing.JLabel();
         closeBtn = new javax.swing.JButton();
+        nameTextField = new javax.swing.JTextField();
 
         setLayout(new java.awt.GridBagLayout());
-
-        nameLabel.setText("TEMP");
-        add(nameLabel, new java.awt.GridBagConstraints());
 
         closeBtn.setFont(new java.awt.Font("Cantarell", 0, 10)); // NOI18N
         closeBtn.setText("X");
@@ -90,9 +99,41 @@ public class CloseableTabComponent extends javax.swing.JPanel {
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.PAGE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 10, 0, 0);
         add(closeBtn, gridBagConstraints);
+
+        nameTextField.setEditable(false);
+        nameTextField.setText("TEMP");
+        nameTextField.setAutoscrolls(false);
+        nameTextField.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        nameTextField.setOpaque(true);
+        nameTextField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                nameTextFieldFocusLost(evt);
+            }
+        });
+        nameTextField.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                nameTextFieldMouseClicked(evt);
+            }
+        });
+        nameTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                nameTextFieldActionPerformed(evt);
+            }
+        });
+        nameTextField.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                nameTextFieldKeyTyped(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        add(nameTextField, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
     private void closeBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeBtnActionPerformed
@@ -117,10 +158,36 @@ public class CloseableTabComponent extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_closeBtnMouseClicked
 
+    private void nameTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_nameTextFieldFocusLost
+        commitRename();
+    }//GEN-LAST:event_nameTextFieldFocusLost
+
+    private void nameTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nameTextFieldActionPerformed
+        commitRename();
+    }//GEN-LAST:event_nameTextFieldActionPerformed
+
+    private void nameTextFieldKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_nameTextFieldKeyTyped
+        revalidate();
+    }//GEN-LAST:event_nameTextFieldKeyTyped
+
+    private void nameTextFieldMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_nameTextFieldMouseClicked
+        if (!isActive) {
+            parent.setSelectedIndex(parent.indexOfTabComponent(this));
+            return;
+        }
+
+        if (evt.getClickCount() >= 2) {
+            nameTextField.setEditable(true);
+            nameTextField.setFocusable(true);
+            nameTextField.grabFocus();
+            nameTextField.selectAll();
+        }
+    }//GEN-LAST:event_nameTextFieldMouseClicked
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton closeBtn;
-    private javax.swing.JLabel nameLabel;
+    private javax.swing.JTextField nameTextField;
     // End of variables declaration//GEN-END:variables
 
     public interface CloseListener extends EventListener {
