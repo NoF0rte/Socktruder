@@ -31,6 +31,10 @@ public class ToClientModel extends BReadOnlyTableModel {
 	public Row getRow(int row) {
 		return this.rows.get(row);
 	}
+
+	public ArrayList<Row> getRows(){
+		return this.rows;
+	}
 	
 	public class Row {
 		public int num;

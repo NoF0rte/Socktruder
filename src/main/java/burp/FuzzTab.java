@@ -8,11 +8,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.JFileChooser;
+import javax.swing.RowSorter;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -52,6 +54,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     private Runner runner = null;
     private Settings settings;
     private Registration messageRegistration;
+    private TableRowHighlighter cellRenderer;
 
     private Position getSelectedPosition() {
         int index = positionsComboBox.getSelectedIndex();
@@ -195,6 +198,31 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         payloadCountLabel.setText(Integer.toString(payloadsModel.getRowCount()));
     }
 
+    private void updateToClientHighlight(boolean scrollIntoView) {
+            int serverRowNum = toServerTable.getRowSorter().convertRowIndexToModel(toServerTable.getSelectedRow());
+
+            ToServerModel.Row serverRow = toServerModel.getRow(serverRowNum);
+            ArrayList<ToClientModel.Row> allRows = toClientModel.getRows();
+            int rowToHighlight = -1;
+            ZoneOffset zone = ZoneOffset.of("Z");
+            long minDiff = -1;
+            for (int i = 0; i < allRows.size(); i++) {
+                long diff = allRows.get(i).time.toInstant(zone).toEpochMilli() - serverRow.time.toInstant(zone).toEpochMilli();
+                if (diff > 0 && (diff < minDiff || minDiff < 0)) {
+                    minDiff = diff;
+                    rowToHighlight = i;
+                }
+            }
+            
+            RowSorter<?> sorter = toClientTable.getRowSorter();
+            cellRenderer.setHighlightRow(sorter.convertRowIndexToView(rowToHighlight));
+            toClientTable.repaint();
+
+            if (scrollIntoView && rowToHighlight != -1) {
+                toClientTable.scrollRectToVisible(toClientTable.getCellRect(sorter.convertRowIndexToView(rowToHighlight), 1, true));
+            }
+    }
+
     @Override
     public TextMessageAction handleTextMessage(TextMessage textMessage) {
         if (textMessage.direction() == Direction.SERVER_TO_CLIENT) {
@@ -227,15 +255,20 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         payloadsModel.addColumn("TEMP");
         payloadsTable.setTableHeader(null);
 
+        cellRenderer = new TableRowHighlighter();
+
         // Set the toServerViewer content every time a new row is selected
         toServerTable.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) {
                 return;
             }
 
-            int row = toServerTable.getRowSorter().convertRowIndexToModel(toServerTable.getSelectedRow());
-            String msg = toServerModel.getRow(row).message;
-            toServerViewer.setContents(ByteArray.byteArray(msg));
+            int serverRowNum = toServerTable.getRowSorter().convertRowIndexToModel(toServerTable.getSelectedRow());
+
+            ToServerModel.Row serverRow = toServerModel.getRow(serverRowNum);
+            toServerViewer.setContents(ByteArray.byteArray(serverRow.message));
+
+            updateToClientHighlight(true);
         });
         toServerTable.getColumn("Message").setPreferredWidth(150);
         toServerTable.getColumn("Time").setPreferredWidth(150);
@@ -251,6 +284,11 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         });
         toClientTable.getColumn("Message").setPreferredWidth(150);
         toClientTable.getColumn("Time").setPreferredWidth(150);
+        toClientTable.setDefaultRenderer(Object.class, cellRenderer);
+        toClientTable.setDefaultRenderer(Integer.class, cellRenderer);
+        toClientTable.getRowSorter().addRowSorterListener(e -> {
+            updateToClientHighlight(false);
+        });
 
         // Ensure the start attack button is in the same place for every tab
         jTabbedPane1.addChangeListener(e -> {
