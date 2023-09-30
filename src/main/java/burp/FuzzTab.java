@@ -329,6 +329,12 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
         JOptionPane.showMessageDialog(api.userInterface().swingUtils().suiteFrame(), message, Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
     }
 
+    public void close() {
+        if (runner != null) {
+            runner.stop();
+        }
+    }
+
     @Override
     public TextMessageAction handleTextMessage(TextMessage textMessage) {
         if (textMessage.direction() == Direction.SERVER_TO_CLIENT) {

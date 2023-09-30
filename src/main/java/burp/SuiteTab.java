@@ -7,6 +7,7 @@ package burp;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.WebSocket;
+import burp.ui.ClosableTabComponent;
 
 /**
  *
@@ -78,8 +79,19 @@ public class SuiteTab extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
     public void addFuzzTab(WebSocket socket, String url, TextMessage message) {
-        FuzzTab tab = new FuzzTab(api, socket, url, message);
-        jTabbedPane1.addTab(Integer.toString(tabNumber++), tab);
         instructionsPanel.setVisible(false);
+
+        FuzzTab tab = new FuzzTab(api, socket, url, message);
+
+        String tabTitle = Integer.toString(tabNumber++);
+        jTabbedPane1.addTab(tabTitle, tab);
+        jTabbedPane1.setTabComponentAt(jTabbedPane1.indexOfTab(tabTitle), new ClosableTabComponent(tabTitle, () -> {
+            tab.close();
+            jTabbedPane1.removeTabAt(jTabbedPane1.indexOfTab(tabTitle));
+
+            if (jTabbedPane1.getTabCount() == 0) {
+                instructionsPanel.setVisible(true);
+            }
+        }));
     }
 }
