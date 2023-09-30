@@ -13,7 +13,7 @@ import com.google.gson.reflect.TypeToken;
 
 public class Config {
 
-	public static final String SEND_KEYWORD = "[WS_FUZZER]";
+	public static final String SEND_KEYWORD = "[SOCKTRUDER]";
 	public static final String FUZZ_LIST_KEY = "fuzzList";
 	public static final String ENABLED_KEY = "enabled";
 	public static final String DELAY_KEY = "delay";

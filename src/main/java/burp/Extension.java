@@ -8,7 +8,7 @@ import burp.api.montoya.websocket.*;
 
 public class Extension implements BurpExtension, WebSocketCreatedHandler {
 
-	public static final String EXTENSION_NAME = "WS Fuzzer";
+	public static final String EXTENSION_NAME = "Socktruder";
 	private MontoyaApi api;
 
 	@Override
