@@ -40,7 +40,7 @@ import burp.ui.*;
  *
  * @author kali
  */
-public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
+public class FuzzTab extends javax.swing.JPanel implements MessageHandler, CloseableComponent {
 
     public static final String MARKER = "§";
 
@@ -326,13 +326,20 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler {
     }
 
     private void showError(String message) {
-        JOptionPane.showMessageDialog(api.userInterface().swingUtils().suiteFrame(), message, Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(null, message, Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
     }
 
-    public void close() {
+    public boolean close() {
         if (runner != null) {
+            int result = JOptionPane.showConfirmDialog(null, "Close tab?", Extension.EXTENSION_NAME, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (result != JOptionPane.YES_OPTION) {
+                return false;
+            }
+            
             runner.stop();
         }
+
+        return true;
     }
 
     @Override

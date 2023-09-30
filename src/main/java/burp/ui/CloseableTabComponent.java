@@ -5,8 +5,10 @@
 package burp.ui;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.util.EventListener;
 
+import javax.swing.JTabbedPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
@@ -14,8 +16,15 @@ import javax.swing.border.LineBorder;
  *
  * @author kali
  */
-public class ClosableTabComponent extends javax.swing.JPanel {
+public class CloseableTabComponent extends javax.swing.JPanel {
     private final CloseListener closeListener;
+    private final JTabbedPane parent;
+
+    private boolean isActive = true;
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
+        closeBtn.setEnabled(isActive);
+    }
 
     public void setText(String text) {
         nameLabel.setText(text);
@@ -24,8 +33,18 @@ public class ClosableTabComponent extends javax.swing.JPanel {
     /**
      * Creates new form ClosableTabComponent
      */
-    public ClosableTabComponent(String title, CloseListener onClose) {
+    public CloseableTabComponent(String title, JTabbedPane parent, CloseListener onClose) {
         this.closeListener = onClose;
+        this.parent = parent;
+
+        parent.addChangeListener(e -> {
+            Component selected = parent.getTabComponentAt(parent.getSelectedIndex());
+            if (selected == this) {
+                setActive(true);
+            } else {
+                setActive(false);
+            }
+        });
         
         initComponents();
         nameLabel.setText(title);
@@ -55,6 +74,9 @@ public class ClosableTabComponent extends javax.swing.JPanel {
         closeBtn.setContentAreaFilled(false);
         closeBtn.setMargin(new java.awt.Insets(0, 5, 0, 5));
         closeBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                closeBtnMouseClicked(evt);
+            }
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 closeBtnMouseEntered(evt);
             }
@@ -80,12 +102,20 @@ public class ClosableTabComponent extends javax.swing.JPanel {
     }//GEN-LAST:event_closeBtnActionPerformed
 
     private void closeBtnMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_closeBtnMouseEntered
-        closeBtn.setBorder(new LineBorder(Color.black, 1));
+        if (isActive) {
+            closeBtn.setBorder(new LineBorder(Color.black, 1));
+        }
     }//GEN-LAST:event_closeBtnMouseEntered
 
     private void closeBtnMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_closeBtnMouseExited
         closeBtn.setBorder(new EmptyBorder(1, 1, 1, 1));
     }//GEN-LAST:event_closeBtnMouseExited
+
+    private void closeBtnMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_closeBtnMouseClicked
+        if (!isActive) {
+            parent.setSelectedIndex(parent.indexOfTabComponent(this));
+        }
+    }//GEN-LAST:event_closeBtnMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

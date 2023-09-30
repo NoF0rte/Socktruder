@@ -4,10 +4,13 @@
  */
 package burp;
 
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.WebSocket;
-import burp.ui.ClosableTabComponent;
+import burp.ui.CloseableTabComponent;
 
 /**
  *
@@ -26,7 +29,6 @@ public class SuiteTab extends javax.swing.JPanel {
     }
 
     private MontoyaApi api;
-    private int tabNumber = 1;
 
     /**
      * Creates new form SuiteTab
@@ -35,6 +37,21 @@ public class SuiteTab extends javax.swing.JPanel {
         this.api = api;
 
         initComponents();
+
+        fuzzTabbedPane.addContainerListener(new ContainerListener() {
+            @Override
+            public void componentAdded(ContainerEvent arg0) {
+                if (fuzzTabbedPane.getTabCount() == 0) {
+                    instructionsPanel.setVisible(false);
+                }
+            }
+            @Override
+            public void componentRemoved(ContainerEvent arg0) {
+                if (fuzzTabbedPane.getTabCount() == 0) {
+                    instructionsPanel.setVisible(true);
+                }
+            }
+        });
     }
 
     /**
@@ -47,12 +64,13 @@ public class SuiteTab extends javax.swing.JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        fuzzTabbedPane = new burp.ui.BTabbedPane();
         instructionsPanel = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
-        jTabbedPane1 = new javax.swing.JTabbedPane();
 
         setLayout(new javax.swing.OverlayLayout(this));
+        add(fuzzTabbedPane);
 
         instructionsPanel.setLayout(new java.awt.GridBagLayout());
 
@@ -67,31 +85,18 @@ public class SuiteTab extends javax.swing.JPanel {
         instructionsPanel.add(jLabel2, gridBagConstraints);
 
         add(instructionsPanel);
-        add(jTabbedPane1);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private burp.ui.BTabbedPane fuzzTabbedPane;
     private javax.swing.JPanel instructionsPanel;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JTabbedPane jTabbedPane1;
     // End of variables declaration//GEN-END:variables
 
     public void addFuzzTab(WebSocket socket, String url, TextMessage message) {
-        instructionsPanel.setVisible(false);
-
         FuzzTab tab = new FuzzTab(api, socket, url, message);
-
-        String tabTitle = Integer.toString(tabNumber++);
-        jTabbedPane1.addTab(tabTitle, tab);
-        jTabbedPane1.setTabComponentAt(jTabbedPane1.indexOfTab(tabTitle), new ClosableTabComponent(tabTitle, () -> {
-            tab.close();
-            jTabbedPane1.removeTabAt(jTabbedPane1.indexOfTab(tabTitle));
-
-            if (jTabbedPane1.getTabCount() == 0) {
-                instructionsPanel.setVisible(true);
-            }
-        }));
+        fuzzTabbedPane.addTab(tab);
     }
 }
