@@ -7,7 +7,9 @@ package burp;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -16,11 +18,16 @@ import java.util.List;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.RowSorter;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileFilter;
 
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
+
+import com.opencsv.CSVWriter;
 
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.core.ByteArray;
@@ -57,6 +64,9 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private Registration messageRegistration;
     private TableRowHighlighter cellRenderer;
     private boolean updatingToServer = false;
+    private boolean clearingTables = false;
+    private String lastExportedLocation = "";
+    private String lastLoadedPayloadLocation = "";
 
     private Position getSelectedPosition() {
         int index = positionsComboBox.getSelectedIndex();
@@ -243,6 +253,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         dedupePayloadsBtn.setEnabled(false);
         addPayloadBtn.setEnabled(false);
         delayTextField.setEnabled(false);
+        exportTablesBtn.setEnabled(false);
 
         runner = new Runner(settings);
         Thread thread = new Thread(runner);
@@ -270,6 +281,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
             dedupePayloadsBtn.setEnabled(true);
             addPayloadBtn.setEnabled(true);
             delayTextField.setEnabled(true);
+            exportTablesBtn.setEnabled(true);
         });
 
         thread.start();
@@ -285,6 +297,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         startPauseAttackBtn.setText("Pause");
         delayTextField.setEnabled(false);
+        exportTablesBtn.setEnabled(false);
 
         Thread thread = new Thread(runner);
         thread.start();
@@ -294,6 +307,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         runner.pause();
         startPauseAttackBtn.setText("Resume");
         delayTextField.setEnabled(true);
+        exportTablesBtn.setEnabled(true);
     }
 
     private boolean validateAttackSettings() {
@@ -367,6 +381,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         initComponents();
 
+        jSplitPane3.setPreferredSize(new Dimension(0, 0));
         jSplitPane3.setDividerLocation(-1);
 
         targetTextField.setText(url);
@@ -378,7 +393,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         // Set the toServerViewer content every time a new row is selected
         toServerTable.getSelectionModel().addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting() || updatingToServer) {
+            if (e.getValueIsAdjusting() || updatingToServer || clearingTables) {
                 return;
             }
 
@@ -394,7 +409,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         
 
         toClientTable.getSelectionModel().addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting()) {
+            if (e.getValueIsAdjusting() || clearingTables) {
                 return;
             }
 
@@ -407,7 +422,9 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         toClientTable.setDefaultRenderer(Object.class, cellRenderer);
         toClientTable.setDefaultRenderer(Integer.class, cellRenderer);
         toClientTable.getRowSorter().addRowSorterListener(e -> {
-            updateToClientHighlight(false); // Whenever the table is sorted, we need to update which row is highlighted
+            SwingUtilities.invokeLater(() -> {
+                updateToClientHighlight(false); // Whenever the table is sorted, we need to update which row is highlighted
+            });
         });
 
         // Ensure the start attack panel is in the same place for every tab
@@ -493,6 +510,12 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         delayTextField = new javax.swing.JTextField();
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jLabel13 = new javax.swing.JLabel();
+        jPanel7 = new javax.swing.JPanel();
+        filler6 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 0));
+        jPanel8 = new javax.swing.JPanel();
+        clearTablesBtn = new javax.swing.JButton();
+        filler5 = new javax.swing.Box.Filler(new java.awt.Dimension(5, 0), new java.awt.Dimension(5, 0), new java.awt.Dimension(5, 32767));
+        exportTablesBtn = new javax.swing.JButton();
         jSplitPane3 = new javax.swing.JSplitPane();
         jSplitPane2 = new javax.swing.JSplitPane();
         jPanel3 = new javax.swing.JPanel();
@@ -903,11 +926,40 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         jSplitPane1.setLeftComponent(jTabbedPane1);
 
+        jPanel7.setLayout(new java.awt.GridBagLayout());
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 0.8;
+        jPanel7.add(filler6, gridBagConstraints);
+
+        jPanel8.setLayout(new javax.swing.BoxLayout(jPanel8, javax.swing.BoxLayout.LINE_AXIS));
+
+        clearTablesBtn.setText("Clear");
+        clearTablesBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                clearTablesBtnActionPerformed(evt);
+            }
+        });
+        jPanel8.add(clearTablesBtn);
+        jPanel8.add(filler5);
+
+        exportTablesBtn.setText("Export");
+        exportTablesBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exportTablesBtnActionPerformed(evt);
+            }
+        });
+        jPanel8.add(exportTablesBtn);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 10);
+        jPanel7.add(jPanel8, gridBagConstraints);
+
         jSplitPane3.setDividerLocation(400);
         jSplitPane3.setResizeWeight(0.5);
-        jSplitPane3.setPreferredSize(new java.awt.Dimension(0, 0));
 
-        jSplitPane2.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 20, 0));
+        jSplitPane2.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 20, 0));
         jSplitPane2.setDividerLocation(250);
         jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane2.setMinimumSize(new java.awt.Dimension(0, 0));
@@ -964,7 +1016,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         jSplitPane3.setLeftComponent(jSplitPane2);
 
-        jSplitPane4.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 20, 10));
+        jSplitPane4.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 20, 10));
         jSplitPane4.setDividerLocation(250);
         jSplitPane4.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane4.setMinimumSize(new java.awt.Dimension(0, 0));
@@ -1021,7 +1073,16 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         jSplitPane3.setRightComponent(jSplitPane4);
 
-        jSplitPane1.setRightComponent(jSplitPane3);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        jPanel7.add(jSplitPane3, gridBagConstraints);
+
+        jSplitPane1.setRightComponent(jPanel7);
 
         add(jSplitPane1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
@@ -1074,9 +1135,14 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         fileChooser.setMultiSelectionEnabled(false);
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.setFileHidingEnabled(true);
+        
+        if (lastLoadedPayloadLocation != "") {
+            fileChooser.setCurrentDirectory(new File(lastLoadedPayloadLocation));
+        }
 
-        int choice = fileChooser.showOpenDialog(api.userInterface().swingUtils().suiteFrame());
+        int choice = fileChooser.showOpenDialog(null);
         if (choice == JFileChooser.APPROVE_OPTION) {
+            lastLoadedPayloadLocation = fileChooser.getCurrentDirectory().toString();
             File file = fileChooser.getSelectedFile();
 
             try {
@@ -1182,6 +1248,84 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         runner.stop();
     }//GEN-LAST:event_stopAttackBtnActionPerformed
 
+    private void clearTablesBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTablesBtnActionPerformed
+        // TODO: Add confirmation?
+        clearingTables = true;
+        toClientModel.clear();
+        toServerModel.clear();
+        clearingTables = false;
+
+        cellRenderer.setHighlightRow(-1);
+        
+        toServerViewer.setContents(ByteArray.byteArray(""));
+        toClientViewer.setContents(ByteArray.byteArray(""));
+    }//GEN-LAST:event_clearTablesBtnActionPerformed
+
+    private void exportTablesBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportTablesBtnActionPerformed
+        if (toServerTable.getRowCount() == 0 && toClientTable.getRowCount() == 0) {
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select the file to save");
+        fileChooser.setCurrentDirectory(new File(lastExportedLocation != "" ? lastExportedLocation : System.getProperty("user.home")));
+        fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
+        fileChooser.setDragEnabled(false);
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setFileHidingEnabled(true);
+        fileChooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return true;
+            }
+            @Override
+            public String getDescription() {
+                return "CSV file (*.csv)";
+            }
+        });
+
+        int result = fileChooser.showSaveDialog(null);
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        lastExportedLocation = fileChooser.getCurrentDirectory().toString();
+        String selectedFile = fileChooser.getSelectedFile().toString();
+        if (!selectedFile.toLowerCase().endsWith(".csv")) {
+            selectedFile = selectedFile + ".csv";
+        }
+
+        ArrayList<ExportRow> rows = new ArrayList<>();
+        toServerModel.getRows().forEach(row -> {
+            rows.add(new ExportRow(row));
+        });
+        toClientModel.getRows().forEach(row -> {
+            rows.add(new ExportRow(row));
+        });
+
+        rows.sort((a, b) -> {
+            return a.time.compareTo(b.time);
+        });
+
+        try {
+            FileWriter outputFile = new FileWriter(selectedFile);
+            CSVWriter writer = new CSVWriter(outputFile);
+
+            writer.writeNext(new String[]{"Direction", "Position", "Message", "Payload", "Length", "Time"});
+            writer.writeAll(rows.stream().map(row -> {
+                return row.asArray();
+            }).toList());
+
+            writer.close();
+
+            JOptionPane.showMessageDialog(null, String.format("Tables export to \"%s\"", selectedFile));
+        } catch (Exception e) {
+            showError("Error exporting tables: " + e.getMessage());
+        }
+    }//GEN-LAST:event_exportTablesBtnActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addMarkerBtn;
@@ -1189,12 +1333,16 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JPanel attackPanel;
     private javax.swing.JButton clearMarkersBtn;
     private javax.swing.JButton clearPayloadsBtn;
+    private javax.swing.JButton clearTablesBtn;
     private javax.swing.JButton dedupePayloadsBtn;
     private javax.swing.JTextField delayTextField;
+    private javax.swing.JButton exportTablesBtn;
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
     private javax.swing.Box.Filler filler3;
     private javax.swing.Box.Filler filler4;
+    private javax.swing.Box.Filler filler5;
+    private javax.swing.Box.Filler filler6;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -1216,6 +1364,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
+    private javax.swing.JPanel jPanel7;
+    private javax.swing.JPanel jPanel8;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
@@ -1245,4 +1395,41 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JTable toServerTable;
     private javax.swing.JPanel toServerViewContainer;
     // End of variables declaration//GEN-END:variables
+
+    private class ExportRow {
+        private final String position;
+        private final String direction;
+        private final String message;
+        private final String payload;
+        private final int length;
+        private final LocalDateTime time;
+
+        public ExportRow(ToClientModel.Row row) {
+            this.position = "";
+            this.direction = "To Client";
+            this.message = row.message;
+            this.payload = "";
+            this.length = row.length;
+            this.time = row.time;
+        }
+        public ExportRow(ToServerModel.Row row) {
+            this.position = Integer.toString(row.position);
+            this.direction = "To Server";
+            this.message = row.message;
+            this.payload = row.payload;
+            this.length = row.length;
+            this.time = row.time;
+        }
+
+        public String[] asArray(){
+            return new String[]{
+                direction,
+                position,
+                message,
+                payload,
+                Integer.toString(length),
+                time.toString()
+            };
+        }
+    }
 }

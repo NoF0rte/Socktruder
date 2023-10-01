@@ -21,6 +21,12 @@ public class ToClientModel extends BReadOnlyTableModel {
 		return types[columnIndex];
 	}
 
+	@Override
+	public void clear() {
+		super.clear();
+		rows.clear();
+	}
+
 	public void addRow(String message) {
 		Row row = new Row(rows.size() + 1, message);
 		rows.add(row);

@@ -23,6 +23,12 @@ public class ToServerModel extends BReadOnlyTableModel {
 		return types[columnIndex];
 	}
 
+	@Override
+	public void clear() {
+		super.clear();
+		rows.clear();
+	}
+
 	public void addRow(String message, int position, String payload) {
 		Row row = new Row(rows.size() + 1, position, message, payload);
 		rows.add(row);
@@ -32,6 +38,10 @@ public class ToServerModel extends BReadOnlyTableModel {
 
 	public Row getRow(int row) {
 		return this.rows.get(row);
+	}
+
+	public ArrayList<Row> getRows() {
+		return rows;
 	}
 	
 	public class Row {
