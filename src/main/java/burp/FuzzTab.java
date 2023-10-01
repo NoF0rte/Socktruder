@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.RowSorter;
@@ -26,6 +27,7 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import com.opencsv.CSVWriter;
 
@@ -401,6 +403,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         targetTextField.setText(url);
         messageEditor.setText(message.payload().replace(Extension.SEND_KEYWORD, ""));
+        messageEditor.setCodeFoldingEnabled(true);
+
         payloadsModel.addColumn("TEMP");
         payloadsTable.setTableHeader(null);
 
@@ -421,7 +425,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         });
         toServerTable.getColumn("Message").setPreferredWidth(150);
         toServerTable.getColumn("Time").setPreferredWidth(150);
-        
 
         toClientTable.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting() || clearingTables) {
@@ -441,6 +444,19 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
                 updateToClientHighlight(false); // Whenever the table is sorted, we need to update which row is highlighted
             });
         });
+
+        syntaxHighlightingComboBox.setModel(new DefaultComboBoxModel<>(new String[]{
+            SyntaxConstants.SYNTAX_STYLE_NONE,
+            SyntaxConstants.SYNTAX_STYLE_JSON,
+            SyntaxConstants.SYNTAX_STYLE_JSON_WITH_COMMENTS,
+            SyntaxConstants.SYNTAX_STYLE_XML,
+            SyntaxConstants.SYNTAX_STYLE_CSV,
+            SyntaxConstants.SYNTAX_STYLE_HTML,
+            SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT,
+            SyntaxConstants.SYNTAX_STYLE_SQL,
+            SyntaxConstants.SYNTAX_STYLE_YAML
+        }));
+        syntaxHighlightingComboBox.setSelectedIndex(0);
 
         // Ensure the start attack panel is in the same place for every tab
         jTabbedPane1.addChangeListener(e -> {
@@ -478,6 +494,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         java.awt.GridBagConstraints gridBagConstraints;
 
         jSplitPane1 = new javax.swing.JSplitPane();
+        jPanel10 = new javax.swing.JPanel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         positionsPanel = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -527,6 +544,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         delayTextField = new javax.swing.JTextField();
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jLabel13 = new javax.swing.JLabel();
+        syntaxHighlightingComboBox = new javax.swing.JComboBox<>();
+        jLabel17 = new javax.swing.JLabel();
         jPanel7 = new javax.swing.JPanel();
         filler6 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 0));
         jPanel8 = new javax.swing.JPanel();
@@ -561,7 +580,9 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         jSplitPane1.setMinimumSize(new java.awt.Dimension(0, 0));
         jSplitPane1.setPreferredSize(new java.awt.Dimension(0, 0));
 
-        jTabbedPane1.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 10, 20, 5));
+        jPanel10.setLayout(new java.awt.GridBagLayout());
+
+        jTabbedPane1.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 10, 10, 5));
         jTabbedPane1.setMinimumSize(new java.awt.Dimension(0, 0));
         jTabbedPane1.setPreferredSize(new java.awt.Dimension(0, 0));
 
@@ -580,9 +601,9 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         jLabel2.setFont(new java.awt.Font("Cantarell", 0, 14)); // NOI18N
         jLabel2.setText("Configure the positions where the payloads will be inserted.");
-        jLabel2.setMaximumSize(new java.awt.Dimension(363, 20));
-        jLabel2.setMinimumSize(new java.awt.Dimension(363, 20));
-        jLabel2.setPreferredSize(new java.awt.Dimension(363, 20));
+        jLabel2.setMaximumSize(new java.awt.Dimension(370, 20));
+        jLabel2.setMinimumSize(new java.awt.Dimension(370, 20));
+        jLabel2.setPreferredSize(new java.awt.Dimension(370, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
@@ -964,7 +985,35 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         jTabbedPane1.addTab("Settings", settingsPanel);
 
-        jSplitPane1.setLeftComponent(jTabbedPane1);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 0.9;
+        jPanel10.add(jTabbedPane1, gridBagConstraints);
+
+        syntaxHighlightingComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                syntaxHighlightingComboBoxActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 10, 0);
+        jPanel10.add(syntaxHighlightingComboBox, gridBagConstraints);
+
+        jLabel17.setText("Syntax Highlighting:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.insets = new java.awt.Insets(0, 10, 10, 0);
+        jPanel10.add(jLabel17, gridBagConstraints);
+
+        jSplitPane1.setLeftComponent(jPanel10);
 
         jPanel7.setLayout(new java.awt.GridBagLayout());
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -1385,6 +1434,10 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         addPayloadBtnActionPerformed(evt);
     }//GEN-LAST:event_payloadTextBoxActionPerformed
 
+    private void syntaxHighlightingComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_syntaxHighlightingComboBoxActionPerformed
+        messageEditor.setSyntaxEditingStyle((String)syntaxHighlightingComboBox.getSelectedItem());
+    }//GEN-LAST:event_syntaxHighlightingComboBoxActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addMarkerBtn;
@@ -1413,6 +1466,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel16;
+    private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -1422,6 +1476,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
@@ -1454,6 +1509,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JPanel settingsPanel;
     private javax.swing.JButton startPauseAttackBtn;
     private javax.swing.JButton stopAttackBtn;
+    private javax.swing.JComboBox<String> syntaxHighlightingComboBox;
     private javax.swing.JTextField targetTextField;
     private javax.swing.JTable toClientTable;
     private javax.swing.JPanel toClientViewerContainer;
