@@ -20,7 +20,7 @@ public class SocketMessageListener implements MessageHandler {
 
 	@Override
 	public TextMessageAction handleTextMessage(TextMessage textMessage) {
-		if (textMessage.payload().contains(Config.SEND_KEYWORD)) {
+		if (textMessage.payload().contains(Extension.SEND_KEYWORD)) {
 			try {
 				int res = JOptionPane.showConfirmDialog(null, "Send WebSocket message to " + Extension.EXTENSION_NAME + "?", Extension.EXTENSION_NAME, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 				if (res == JOptionPane.YES_OPTION) {

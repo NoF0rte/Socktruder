@@ -78,7 +78,7 @@ public class SuiteTab extends javax.swing.JPanel {
         instructionsPanel.add(jLabel1, new java.awt.GridBagConstraints());
 
         jLabel2.setFont(new java.awt.Font("Cantarell", 0, 18)); // NOI18N
-        jLabel2.setText("To create a tab, send a WebSocket message in Repeater containing the words " + Config.SEND_KEYWORD);
+        jLabel2.setText("To create a tab, send a WebSocket message in Repeater containing the words " + Extension.SEND_KEYWORD);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridy = 1;
         instructionsPanel.add(jLabel2, gridBagConstraints);

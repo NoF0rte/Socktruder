@@ -8,7 +8,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public class TableRowHighlighter implements TableCellRenderer {
-	private final Color highlighColor = new Color(253,253,150);
+	private final Color highlightColor = new Color(253,253,150);
 	private int highlightRow = -1;
 
 	@Override
@@ -21,7 +21,7 @@ public class TableRowHighlighter implements TableCellRenderer {
 		}
 		
 		if (row == highlightRow) {
-			c.setBackground(highlighColor);
+			c.setBackground(highlightColor);
 		}
 
 		return c;

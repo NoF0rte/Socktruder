@@ -7,15 +7,14 @@ import burp.api.montoya.core.ToolType;
 import burp.api.montoya.websocket.*;
 
 public class Extension implements BurpExtension, WebSocketCreatedHandler {
-
 	public static final String EXTENSION_NAME = "Socktruder";
+	public static final String SEND_KEYWORD = "[SOCKTRUDER]";
+
 	private MontoyaApi api;
 
 	@Override
 	public void initialize(MontoyaApi api) {
 		this.api = api;
-
-		Config.setInstance(new Config(api));
 
         //Register web socket handler with Burp.
         api.websockets().registerWebSocketCreatedHandler(this);

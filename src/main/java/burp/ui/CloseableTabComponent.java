@@ -30,7 +30,7 @@ public class CloseableTabComponent extends javax.swing.JPanel {
         nameTextField.setText(text);
     }
 
-    public void commitRename() {
+    private void commitRename() {
         String renamed = nameTextField.getText().strip();
         if (renamed.equals("") || renamed.isEmpty()) {
             renamed = " ";
@@ -50,11 +50,7 @@ public class CloseableTabComponent extends javax.swing.JPanel {
 
         parent.addChangeListener(e -> {
             Component selected = parent.getTabComponentAt(parent.getSelectedIndex());
-            if (selected == this) {
-                setActive(true);
-            } else {
-                setActive(false);
-            }
+            setActive(selected == this);
         });
         
         initComponents();
