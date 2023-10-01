@@ -67,6 +67,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private boolean clearingTables = false;
     private String lastExportedLocation = "";
     private String lastLoadedPayloadLocation = "";
+    private int totalRequests = 0;
 
     private Position getSelectedPosition() {
         int index = positionsComboBox.getSelectedIndex();
@@ -209,7 +210,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private void updateCountLabels() {
         payloadCountLabel.setText(Integer.toString(payloadsModel.getRowCount()));
 
-        int totalRequests = 0;
+        totalRequests = 0;
         for (int i = 0; i < positionCount; i++) {
             totalRequests += allPositions.get(i).getPayloads().size();
         }
@@ -261,6 +262,10 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         delayTextField.setEnabled(false);
         exportTablesBtn.setEnabled(false);
 
+        attackProgressBar.setValue(0);
+        attackProgressBar.setMaximum(totalRequests);
+        attackProgressLabel.setText(String.format("%d of %d", 0, totalRequests));
+
         runner = new Runner(settings);
         Thread thread = new Thread(runner);
 
@@ -269,6 +274,10 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
             updatingToServer = true;
             toServerModel.addRow(e.getMessage(), e.getPosition(), e.getPayload());
             updatingToServer = false;
+
+            int currentProgress = attackProgressBar.getValue() + 1;
+            attackProgressBar.setValue(currentProgress);
+            attackProgressLabel.setText(String.format("%d of %d", currentProgress, totalRequests));
         });
         runner.setDoneListener(() -> {
             messageRegistration.deregister();
@@ -541,6 +550,10 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         jPanel6 = new javax.swing.JPanel();
         jLabel15 = new javax.swing.JLabel();
         toClientViewerContainer = new javax.swing.JPanel();
+        jPanel9 = new javax.swing.JPanel();
+        attackProgressLabel = new javax.swing.JLabel();
+        filler7 = new javax.swing.Box.Filler(new java.awt.Dimension(5, 0), new java.awt.Dimension(5, 0), new java.awt.Dimension(5, 32767));
+        attackProgressBar = new javax.swing.JProgressBar();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -979,6 +992,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         jPanel8.add(exportTablesBtn);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
         gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 10);
         jPanel7.add(jPanel8, gridBagConstraints);
@@ -1103,11 +1118,24 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 0.9;
         jPanel7.add(jSplitPane3, gridBagConstraints);
+
+        jPanel9.setLayout(new javax.swing.BoxLayout(jPanel9, javax.swing.BoxLayout.LINE_AXIS));
+
+        attackProgressLabel.setText("0 of 0");
+        jPanel9.add(attackProgressLabel);
+        jPanel9.add(filler7);
+        jPanel9.add(attackProgressBar);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 10);
+        jPanel7.add(jPanel9, gridBagConstraints);
 
         jSplitPane1.setRightComponent(jPanel7);
 
@@ -1362,6 +1390,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JButton addMarkerBtn;
     private javax.swing.JButton addPayloadBtn;
     private javax.swing.JPanel attackPanel;
+    private javax.swing.JProgressBar attackProgressBar;
+    private javax.swing.JLabel attackProgressLabel;
     private javax.swing.JButton clearMarkersBtn;
     private javax.swing.JButton clearPayloadsBtn;
     private javax.swing.JButton clearTablesBtn;
@@ -1374,6 +1404,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.Box.Filler filler4;
     private javax.swing.Box.Filler filler5;
     private javax.swing.Box.Filler filler6;
+    private javax.swing.Box.Filler filler7;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -1398,6 +1429,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
+    private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
