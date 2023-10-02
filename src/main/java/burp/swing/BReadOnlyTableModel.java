@@ -1,4 +1,4 @@
-package burp.ui;
+package burp.swing;
 
 import javax.swing.table.DefaultTableModel;
 

@@ -43,7 +43,7 @@ import burp.api.montoya.websocket.MessageHandler;
 import burp.api.montoya.websocket.TextMessage;
 import burp.api.montoya.websocket.TextMessageAction;
 import burp.api.montoya.websocket.WebSocket;
-import burp.ui.*;
+import burp.swing.*;
 
 /**
  *

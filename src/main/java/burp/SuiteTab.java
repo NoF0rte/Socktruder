@@ -65,7 +65,7 @@ public class SuiteTab extends javax.swing.JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        fuzzTabbedPane = new burp.ui.BTabbedPane();
+        fuzzTabbedPane = new burp.swing.BTabbedPane();
         instructionsPanel = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
@@ -90,7 +90,7 @@ public class SuiteTab extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private burp.ui.BTabbedPane fuzzTabbedPane;
+    private burp.swing.BTabbedPane fuzzTabbedPane;
     private javax.swing.JPanel instructionsPanel;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

@@ -1,19 +1,17 @@
-package burp.ui;
+package burp.swing;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-public class ToServerModel extends BReadOnlyTableModel {
+public class ToClientModel extends BReadOnlyTableModel {
 	private ArrayList<Row> rows = new ArrayList<>();
 	private Class<?>[] types = new Class[]{
-		Integer.class, Integer.class, String.class, String.class, Integer.class, LocalDateTime.class
+		Integer.class, String.class, Integer.class, LocalDateTime.class
 	};
 
-	public ToServerModel() {
+	public ToClientModel() {
 		this.addColumn("#");
-        this.addColumn("Position");
 		this.addColumn("Message");
-        this.addColumn("Payload");
         this.addColumn("Length");
 		this.addColumn("Time");
 	}
@@ -29,8 +27,8 @@ public class ToServerModel extends BReadOnlyTableModel {
 		rows.clear();
 	}
 
-	public void addRow(String message, int position, String payload) {
-		Row row = new Row(rows.size() + 1, position, message, payload);
+	public void addRow(String message) {
+		Row row = new Row(rows.size() + 1, message);
 		rows.add(row);
 
 		this.addRow(row.toRow());
@@ -40,29 +38,25 @@ public class ToServerModel extends BReadOnlyTableModel {
 		return this.rows.get(row);
 	}
 
-	public ArrayList<Row> getRows() {
-		return rows;
+	public ArrayList<Row> getRows(){
+		return this.rows;
 	}
 	
 	public class Row {
 		public int num;
-		public int position;
 		public String message;
-		public String payload;
 		public int length;
 		public LocalDateTime time;
 
-		public Row(int num, int position, String message, String payload) {
+		public Row(int num, String message) {
 			this.num = num;
-			this.position = position;
-			this.payload = payload;
 			this.message = message;
 			this.length = message.length();
 			this.time = LocalDateTime.now();
 		}
 
 		private Object[] toRow() {
-			return new Object[]{num, position, message, payload, length, time};
+			return new Object[]{num, message, length, time};
 		}
 	}
 }
