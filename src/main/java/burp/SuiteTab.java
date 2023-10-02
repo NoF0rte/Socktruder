@@ -51,6 +51,8 @@ public class SuiteTab extends javax.swing.JPanel {
                 }
             }
         });
+
+        fuzzTabbedPane.enableClosableTabs();
     }
 
     /**
