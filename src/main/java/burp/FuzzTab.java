@@ -1370,7 +1370,11 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     }//GEN-LAST:event_stopAttackBtnActionPerformed
 
     private void clearTablesBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTablesBtnActionPerformed
-        // TODO: Add confirmation?
+        int result = JOptionPane.showConfirmDialog(null, "Are you sure you want to clear to results tables?", Extension.EXTENSION_NAME, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (result != JOptionPane.YES_OPTION) {
+            return;
+        }
+
         clearingTables = true;
         toClientModel.clear();
         toServerModel.clear();
