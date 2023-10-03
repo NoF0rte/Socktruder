@@ -8,7 +8,7 @@ import burp.api.montoya.websocket.*;
 
 public class Extension implements BurpExtension, WebSocketCreatedHandler {
 	public static final String EXTENSION_NAME = "Socktruder";
-	public static final String SEND_KEYWORD = "[SOCKTRUDER]";
+	public static final String SEND_KEYWORD = "@Socktruder";
 
 	private MontoyaApi api;
 
