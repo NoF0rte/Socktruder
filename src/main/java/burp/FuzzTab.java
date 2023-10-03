@@ -1214,11 +1214,20 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     }//GEN-LAST:event_addMarkerBtnActionPerformed
 
     private void clearMarkersBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearMarkersBtnActionPerformed
-        String before = messageEditor.getText();
-        String after = before.replace(MARKER, "");
-        if (after != before) {
-            messageEditor.setText(after);
+        String selectedText = messageEditor.getSelectedText();
+        if (!selectedText.isEmpty()) {
+            String after = selectedText.replace(MARKER, "");
+            if (after != selectedText) {
+                messageEditor.replaceRange(after, messageEditor.getSelectionStart(), messageEditor.getSelectionEnd());
+            }
+        } else {
+            String before = messageEditor.getText();
+            String after = before.replace(MARKER, "");
+            if (after != before) {
+                messageEditor.setText(after);
+            }
         }
+        
         updatePositions();
 
         messageEditor.grabFocus();
