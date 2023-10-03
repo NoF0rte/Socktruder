@@ -521,6 +521,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         stopAttackBtn = new javax.swing.JButton();
         filler4 = new javax.swing.Box.Filler(new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 32767));
         startPauseAttackBtn = new javax.swing.JButton();
+        syntaxHighlightingComboBox = new javax.swing.JComboBox<>();
+        jLabel17 = new javax.swing.JLabel();
         payloadsPanel = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
@@ -549,8 +551,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         delayTextField = new javax.swing.JTextField();
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jLabel13 = new javax.swing.JLabel();
-        syntaxHighlightingComboBox = new javax.swing.JComboBox<>();
-        jLabel17 = new javax.swing.JLabel();
         jPanel7 = new javax.swing.JPanel();
         filler6 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 0));
         jPanel8 = new javax.swing.JPanel();
@@ -651,7 +651,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.gridheight = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 0.9;
@@ -718,9 +717,29 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         positionsPanel.add(attackPanel, gridBagConstraints);
+
+        syntaxHighlightingComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                syntaxHighlightingComboBoxActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 0);
+        positionsPanel.add(syntaxHighlightingComboBox, gridBagConstraints);
+
+        jLabel17.setText("Syntax Highlighting:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        positionsPanel.add(jLabel17, gridBagConstraints);
 
         jTabbedPane1.addTab("Positions", positionsPanel);
 
@@ -998,25 +1017,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 0.9;
         jPanel10.add(jTabbedPane1, gridBagConstraints);
-
-        syntaxHighlightingComboBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                syntaxHighlightingComboBoxActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 10, 0);
-        jPanel10.add(syntaxHighlightingComboBox, gridBagConstraints);
-
-        jLabel17.setText("Syntax Highlighting:");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.insets = new java.awt.Insets(0, 10, 10, 0);
-        jPanel10.add(jLabel17, gridBagConstraints);
 
         jSplitPane1.setLeftComponent(jPanel10);
 
