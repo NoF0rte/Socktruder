@@ -62,7 +62,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private WebSocketMessageEditor toServerViewer;
     private WebSocketMessageEditor toClientViewer;
     private Runner runner = null;
-    private Settings settings;
+    private FuzzSettings settings;
     private Registration messageRegistration;
     private TableRowHighlighter cellRenderer;
     private boolean updatingToServer = false;
@@ -396,7 +396,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
      */
     public FuzzTab(MontoyaApi api, WebSocket socket, String url, TextMessage message) {
         this.api = api;
-        this.settings = new Settings(api, socket);
+        this.settings = new FuzzSettings(api, socket);
         
         toServerViewer = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);
         toClientViewer = api.userInterface().createWebSocketMessageEditor(EditorOptions.READ_ONLY);

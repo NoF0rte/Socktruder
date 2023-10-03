@@ -3,7 +3,7 @@ package burp;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.websocket.WebSocket;
 
-public class Settings {
+public class FuzzSettings {
 	private int delay = 1000;
 	public int getDelay(){
 		return delay;
@@ -28,9 +28,12 @@ public class Settings {
 		this.message = message;
 	}
 
-	private final WebSocket socket;
+	private WebSocket socket;
 	public WebSocket getSocket() {
 		return socket;
+	}
+	public void setSocket(WebSocket socket) {
+		this.socket = socket;
 	}
 
 	private final MontoyaApi api;
@@ -38,7 +41,7 @@ public class Settings {
 		return api;
 	}
 
-	public Settings(MontoyaApi api, WebSocket socket) {
+	public FuzzSettings(MontoyaApi api, WebSocket socket) {
 		this.socket = socket;
 		this.api = api;
 	}

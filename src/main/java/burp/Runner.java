@@ -5,7 +5,7 @@ import java.util.EventObject;
 import java.util.List;
 
 public class Runner implements Runnable {
-	private final Settings settings;
+	private final FuzzSettings settings;
 
 	private MessageListener messageListener;
 	public void setMessageListener(MessageListener messageListener) {
@@ -28,7 +28,7 @@ public class Runner implements Runnable {
 	private int currentPosition = 0;
 	private int currentPayload = 0;
 
-	public Runner(Settings settings) {
+	public Runner(FuzzSettings settings) {
 		this.settings = settings;
 	}
 
