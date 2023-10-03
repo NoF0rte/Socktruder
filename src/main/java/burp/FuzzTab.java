@@ -36,13 +36,7 @@ import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.core.Registration;
 import burp.api.montoya.ui.editor.EditorOptions;
 import burp.api.montoya.ui.editor.WebSocketMessageEditor;
-import burp.api.montoya.websocket.BinaryMessage;
-import burp.api.montoya.websocket.BinaryMessageAction;
-import burp.api.montoya.websocket.Direction;
-import burp.api.montoya.websocket.MessageHandler;
-import burp.api.montoya.websocket.TextMessage;
-import burp.api.montoya.websocket.TextMessageAction;
-import burp.api.montoya.websocket.WebSocket;
+import burp.api.montoya.websocket.*;
 import burp.swing.*;
 
 /**
@@ -225,29 +219,34 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     }
 
     private void updateToClientHighlight(boolean scrollIntoView) {
-            int serverRowNum = toServerTable.getRowSorter().convertRowIndexToModel(toServerTable.getSelectedRow());
+        int serverSelectedRow = toServerTable.getSelectedRow();
+        if (serverSelectedRow == -1) {
+            return;
+        }
+        
+        int serverRowNum = toServerTable.getRowSorter().convertRowIndexToModel(serverSelectedRow);
 
-            // Find the row in the client table who is the closest time after the selected server row
-            ToServerModel.Row serverRow = toServerModel.getRow(serverRowNum);
-            ArrayList<ToClientModel.Row> allRows = toClientModel.getRows();
-            int rowToHighlight = -1;
-            ZoneOffset zone = ZoneOffset.of("Z");
-            long minDiff = -1;
-            for (int i = 0; i < allRows.size(); i++) {
-                long diff = allRows.get(i).time.toInstant(zone).toEpochMilli() - serverRow.time.toInstant(zone).toEpochMilli();
-                if (diff > 0 && (diff < minDiff || minDiff < 0)) {
-                    minDiff = diff;
-                    rowToHighlight = i;
-                }
+        // Find the row in the client table who is the closest time after the selected server row
+        ToServerModel.Row serverRow = toServerModel.getRow(serverRowNum);
+        ArrayList<ToClientModel.Row> allRows = toClientModel.getRows();
+        int rowToHighlight = -1;
+        ZoneOffset zone = ZoneOffset.of("Z");
+        long minDiff = -1;
+        for (int i = 0; i < allRows.size(); i++) {
+            long diff = allRows.get(i).time.toInstant(zone).toEpochMilli() - serverRow.time.toInstant(zone).toEpochMilli();
+            if (diff > 0 && (diff < minDiff || minDiff < 0)) {
+                minDiff = diff;
+                rowToHighlight = i;
             }
-            
-            RowSorter<?> sorter = toClientTable.getRowSorter();
-            cellRenderer.setHighlightRow(sorter.convertRowIndexToView(rowToHighlight));
-            toClientTable.repaint();
+        }
+        
+        RowSorter<?> sorter = toClientTable.getRowSorter();
+        cellRenderer.setHighlightRow(sorter.convertRowIndexToView(rowToHighlight));
+        toClientTable.repaint();
 
-            if (scrollIntoView && rowToHighlight != -1) {
-                toClientTable.scrollRectToVisible(toClientTable.getCellRect(sorter.convertRowIndexToView(rowToHighlight), 1, true));
-            }
+        if (scrollIntoView && rowToHighlight != -1) {
+            toClientTable.scrollRectToVisible(toClientTable.getCellRect(sorter.convertRowIndexToView(rowToHighlight), 1, true));
+        }
     }
 
     private void startAttack() {
@@ -288,6 +287,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         });
         runner.setDoneListener(() -> {
             messageRegistration.deregister();
+            messageRegistration = null;
+
             runner = null;
 
             startPauseAttackBtn.setText("Start attack");
@@ -311,9 +312,9 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
     private void resumeAttack() {
         try {
-            runner.setDelay(Integer.parseInt(delayTextField.getText()));
+            settings.setDelay(Integer.parseInt(delayTextField.getText()));
         } catch (NumberFormatException e) {
-            showError("Error parsing delay: " + e.getMessage());
+            Dialog.showError("Error parsing delay: " + e.getMessage());
             return;
         }
 
@@ -334,7 +335,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
     private boolean validateAttackSettings() {
         if (positionCount == 0) {
-            showError("Payload positions must be defined!");
+            Dialog.showError("Payload positions must be defined!");
             return false;
         }
 
@@ -342,7 +343,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         for (int i = 0; i < positionCount; i++) {
             Position position = allPositions.get(i);
             if (position.getPayloads().size() == 0) {
-                showError(String.format("No payloads defined for position %s ", position.toString()));
+                Dialog.showError(String.format("No payloads defined for position %s ", position.toString()));
                 return false;
             }
 
@@ -354,15 +355,11 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         try {
             settings.setDelay(Integer.parseInt(delayTextField.getText()));
         } catch (NumberFormatException e) {
-            showError("Error parsing delay: " + e.getMessage());
+            Dialog.showError("Error parsing delay: " + e.getMessage());
             return false;
         }
 
         return true;
-    }
-
-    private void showError(String message) {
-        JOptionPane.showMessageDialog(null, message, Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
     }
 
     public boolean close() {
@@ -376,6 +373,25 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         }
 
         return true;
+    }
+
+    public void updateSocket(WebSocket socket) {
+        settings.setSocket(socket);
+        if (messageRegistration != null) {
+            if (messageRegistration.isRegistered()) {
+                messageRegistration.deregister();
+            }
+
+            messageRegistration = socket.registerMessageHandler(this);
+        }
+    }
+
+    public boolean isAttacking() {
+        if (runner == null) {
+            return false;
+        }
+
+        return runner.isRunning();
     }
 
     @Override
@@ -403,11 +419,12 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         initComponents();
 
+        // Doing this here instead of initComponents/NetBeans so that the designer shows the component
         jSplitPane3.setPreferredSize(new Dimension(0, 0));
         jSplitPane3.setDividerLocation(-1);
 
         targetTextField.setText(url);
-        messageEditor.setText(message.payload().replace(Extension.SEND_KEYWORD, ""));
+        messageEditor.setText(Extension.SEND_REGEX.matcher(message.payload()).replaceAll(""));
         messageEditor.setCodeFoldingEnabled(true);
 
         payloadsModel.addColumn("TEMP");
@@ -1447,7 +1464,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
             JOptionPane.showMessageDialog(null, String.format("Tables export to \"%s\"", selectedFile));
         } catch (Exception e) {
-            showError("Error exporting tables: " + e.getMessage());
+            Dialog.showError("Error exporting tables: " + e.getMessage());
         }
     }//GEN-LAST:event_exportTablesBtnActionPerformed
 

@@ -50,6 +50,24 @@ public class BTabbedPane extends JTabbedPane {
 		setSelectedIndex(index);
 	}
 
+	private TabComponent getTabComponent(int index) {
+		if (index >= getTabCount()) {
+			return null;
+		}
+
+		return (TabComponent)getTabComponentAt(index);
+	}
+
+	public String getTabName(int index) {
+		TabComponent tabComponent = getTabComponent(index);
+		if (tabComponent == null) {
+			return "";
+		}
+
+		String name = tabComponent.getText();
+		return name;
+	}
+
 	public void enableClosableTabs() {
 		UIManager.put("TabbedPane.closeForeground", Color.BLACK);
 		UIManager.put("TabbedPane.closeHoverForeground", Color.red);
@@ -94,7 +112,7 @@ public class BTabbedPane extends JTabbedPane {
 			return;
 		}
 
-		TabComponent tabComponent = (TabComponent)getTabComponentAt(tabIndex);
+		TabComponent tabComponent = getTabComponent(tabIndex);
 		if (tabComponent.getTabContent() instanceof CloseableComponent) {
 			CloseableComponent closable = (CloseableComponent)tabComponent.getTabContent();
 			if (!closable.close()) {
@@ -110,6 +128,10 @@ public class BTabbedPane extends JTabbedPane {
 	}
 
 	public BTabbedPane() {
+		initComponents();
+	}
+
+	private void initComponents() {
 		addTabButton = new javax.swing.JButton();
 		addTabButton.setFont(new java.awt.Font("Cantarell", 0, 15)); // NOI18N
         addTabButton.setText("+");
@@ -137,7 +159,7 @@ public class BTabbedPane extends JTabbedPane {
         trailingContentPanel.add(new Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 0)), gridBagConstraints);
 	}
 
-	private class TabComponent extends JPanel {
+	public class TabComponent extends JPanel {
 		private final JTabbedPane parent;
 
 		private final Component tabContent;
@@ -151,14 +173,31 @@ public class BTabbedPane extends JTabbedPane {
 		}
 
 		private JTextField textField;
+		public String getText() {
+			return textField.getText();
+		}
 
 		public TabComponent(String title, JTabbedPane parent, Component tabContent) {
 			this.parent = parent;
 			this.tabContent = tabContent;
 
-			textField = new JTextField();
+			initComponents();
 
 			textField.setText(title);
+
+			parent.addChangeListener(e -> {
+				if (parent.getTabCount() == 0) {
+					return;
+				}
+
+				Component selected = parent.getTabComponentAt(parent.getSelectedIndex());
+				setActive(selected == this);
+			});
+		}
+
+		private void initComponents() {
+			textField = new JTextField();
+
 			textField.setEditable(false);
 			textField.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
 			textField.setMargin(new java.awt.Insets(2, 2, 2, 2));
@@ -192,15 +231,6 @@ public class BTabbedPane extends JTabbedPane {
 			gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
 			gridBagConstraints.weightx = 1.0;
 			add(textField, gridBagConstraints);
-
-			parent.addChangeListener(e -> {
-				if (parent.getTabCount() == 0) {
-					return;
-				}
-
-				Component selected = parent.getTabComponentAt(parent.getSelectedIndex());
-				setActive(selected == this);
-			});
 		}
 
 		private void clicked(java.awt.event.MouseEvent evt) {

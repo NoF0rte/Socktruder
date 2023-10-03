@@ -32,10 +32,6 @@ public class Runner implements Runnable {
 		this.settings = settings;
 	}
 
-	public synchronized void setDelay(int delay) {
-		this.settings.setDelay(delay);
-	}
-
 	public synchronized boolean isRunning() {
 		return getState() == State.RUNNING;
 	}

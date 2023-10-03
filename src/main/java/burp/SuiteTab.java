@@ -6,6 +6,7 @@ package burp;
 
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
+import java.util.ArrayList;
 
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.websocket.TextMessage;
@@ -96,8 +97,104 @@ public class SuiteTab extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel2;
     // End of variables declaration//GEN-END:variables
 
+    /**
+     * Adds a fuzz tab
+     * @param socket
+     * @param url
+     * @param message
+     */
     public void addFuzzTab(WebSocket socket, String url, TextMessage message) {
         FuzzTab tab = new FuzzTab(api, socket, url, message);
         fuzzTabbedPane.addTab(tab);
+    }
+
+    /**
+     * Adds a fuzz tab with tab name set
+     * @param name
+     * @param socket
+     * @param url
+     * @param message
+     */
+    public void addFuzzTab(String name, WebSocket socket, String url, TextMessage message) {
+        FuzzTab tab = new FuzzTab(api, socket, url, message);
+        fuzzTabbedPane.addTab(name, tab);
+    }
+
+    public ArrayList<Integer> getFuzzTabIndices(String name) {
+        ArrayList<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < fuzzTabCount(); i++) {
+            if (name.equals(fuzzTabbedPane.getTabName(i))) {
+                indices.add(i);
+            }
+        }
+
+        return indices;
+    }
+
+    public String getFuzzTabName(int index) {
+        if (index >= fuzzTabCount()) {
+            return null;
+        }
+
+        return fuzzTabbedPane.getTabName(index);
+    }
+
+    public int fuzzTabCount(String name) {
+        return getFuzzTabIndices(name).size();
+    }
+
+    public int fuzzTabCount() {
+        return fuzzTabbedPane.getTabCount();
+    }
+
+    /**
+     * Updates the WebSocket reference for the fuzz tab with the specified name
+     * @param name
+     * @param socket
+     * @return
+     */
+    public void updateFuzzTab(String name, WebSocket socket) {
+        for (int i = 0; i < fuzzTabbedPane.getTabCount(); i++) {
+            if (name.equals(fuzzTabbedPane.getTabName(i))) {
+                FuzzTab tab = ((FuzzTab)fuzzTabbedPane.getComponentAt(i));
+                if (tab.isAttacking()) {
+                    Dialog.showError("Cannot update WebSocket while attack is in progress.");
+                    return;
+                }
+
+                tab.updateSocket(socket);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Updates the WebSocket reference for the fuzz tab at the specified index
+     * @param index
+     * @param socket
+     * @return
+     */
+    public void updateFuzzTab(int index, WebSocket socket) {
+        if (index >= fuzzTabbedPane.getTabCount()) {
+            return;
+        }
+
+        FuzzTab tab = ((FuzzTab)fuzzTabbedPane.getComponentAt(index));
+        if (tab.isAttacking()) {
+            Dialog.showError("Cannot update WebSocket while attack is in progress.");
+            return;
+        }
+
+        tab.updateSocket(socket);
+    }
+
+    private FuzzTab getFuzzTab(String name) {
+        for (int i = 0; i < fuzzTabbedPane.getTabCount(); i++) {
+            if (name.equals(fuzzTabbedPane.getTabName(i))) {
+                return (FuzzTab)fuzzTabbedPane.getComponentAt(i);
+            }
+        }
+
+        return null;
     }
 }
