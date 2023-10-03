@@ -132,7 +132,12 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
             position.setIndex(i);
             position.setStart(range.getStartOffset());
             position.setEnd(range.getEndOffset());
-            position.setName(text.substring(range.getStartOffset() + 1, range.getEndOffset() - 1));
+
+            if (range.getStartOffset() != text.length() - 1) {
+                position.setName(text.substring(range.getStartOffset() + 1, range.getEndOffset() - 1));
+            } else {
+                position.setName("");
+            }
         }
 
         updateHighlights(ranges);
