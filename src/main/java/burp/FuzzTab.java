@@ -1225,7 +1225,10 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     }//GEN-LAST:event_clearMarkersBtnActionPerformed
 
     private void messageEditorKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_messageEditorKeyTyped
-        updatePositions();
+        // Invoke later to ensure the newly typed character is in the text of the message editor
+        SwingUtilities.invokeLater(() -> {
+            updatePositions();
+        });
     }//GEN-LAST:event_messageEditorKeyTyped
 
     private void loadPayloadsBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadPayloadsBtnActionPerformed
