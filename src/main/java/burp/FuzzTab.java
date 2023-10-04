@@ -31,6 +31,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import com.opencsv.CSVWriter;
 
+import burp.Config.ConfigChangeListener;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.core.Registration;
@@ -38,6 +39,8 @@ import burp.api.montoya.ui.editor.EditorOptions;
 import burp.api.montoya.ui.editor.WebSocketMessageEditor;
 import burp.api.montoya.websocket.*;
 import burp.swing.*;
+import java.awt.HeadlessException;
+import java.io.FileNotFoundException;
 
 /**
  *
@@ -64,6 +67,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private String lastExportedLocation = "";
     private String lastLoadedPayloadLocation = "";
     private int totalRequests = 0;
+    private ConfigChangeListener configChangeListener;
 
     private Position getSelectedPosition() {
         int index = positionsComboBox.getSelectedIndex();
@@ -362,6 +366,15 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         return true;
     }
 
+    private void populateCustomLists() {
+        customListsComboBox.removeAllItems();
+
+        customListsComboBox.addItem(new ListItem<File>("Add from list ...", null));
+        for (File file : Config.get().getCustomLists()) {
+            customListsComboBox.addItem(new ListItem<File>(file.getName(), file));
+        }
+    }
+
     public boolean close() {
         if (runner != null) {
             int result = JOptionPane.showConfirmDialog(null, "Close tab?", Extension.EXTENSION_NAME, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
@@ -371,6 +384,8 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
             
             runner.stop();
         }
+
+        Config.get().removeChangeListener(configChangeListener);
 
         return true;
     }
@@ -503,6 +518,18 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
                 settingsPanel.add(attackPanel, constraints);
             }
         });
+
+        configChangeListener = new ConfigChangeListener() {
+            @Override
+            public void configChanged(String option) {
+                if (option.equals(Config.CUSTOM_LISTS_DIR_PROPERTY)) {
+                    populateCustomLists();
+                }
+            }
+        };
+        Config.get().addChangeListener(configChangeListener);
+
+        populateCustomLists();
     }
 
     /**
@@ -558,6 +585,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         dedupePayloadsBtn = new javax.swing.JButton();
         addPayloadBtn = new javax.swing.JButton();
         payloadTextBox = new javax.swing.JTextField();
+        customListsComboBox = new javax.swing.JComboBox<>();
         jScrollPane1 = new javax.swing.JScrollPane();
         payloadsTable = new javax.swing.JTable();
         filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
@@ -942,6 +970,19 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanel2.add(payloadTextBox, gridBagConstraints);
 
+        customListsComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                customListsComboBoxActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanel2.add(customListsComboBox, gridBagConstraints);
+
         jScrollPane1.setMinimumSize(new java.awt.Dimension(300, 80));
         jScrollPane1.setPreferredSize(new java.awt.Dimension(300, 80));
 
@@ -953,7 +994,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridheight = java.awt.GridBagConstraints.RELATIVE;
+        gridBagConstraints.gridheight = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 5, 0);
         jPanel2.add(jScrollPane1, gridBagConstraints);
@@ -966,7 +1007,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         payloadsPanel.add(jPanel2, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 5;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
@@ -1463,7 +1504,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
             writer.close();
 
             JOptionPane.showMessageDialog(null, String.format("Tables export to \"%s\"", selectedFile));
-        } catch (Exception e) {
+        } catch (HeadlessException | IOException e) {
             Dialog.showError("Error exporting tables: " + e.getMessage());
         }
     }//GEN-LAST:event_exportTablesBtnActionPerformed
@@ -1476,6 +1517,33 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         messageEditor.setSyntaxEditingStyle((String)syntaxHighlightingComboBox.getSelectedItem());
     }//GEN-LAST:event_syntaxHighlightingComboBoxActionPerformed
 
+    private void customListsComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_customListsComboBoxActionPerformed
+        if (customListsComboBox.getSelectedIndex() == -1) {
+            return;
+        }
+        
+        if (positionsComboBox.getSelectedIndex() == -1) {
+            customListsComboBox.setSelectedIndex(0);
+            return;
+        }
+
+        ListItem<File> item =  customListsComboBox.getItemAt(customListsComboBox.getSelectedIndex());
+        if (item != null && item.getValue() != null) {
+            try {
+                FileReader reader = new FileReader(item.getValue());
+                BufferedReader buffered = new BufferedReader(reader);
+
+                buffered.lines().forEach(line -> {
+                    addPayload(line);
+                });
+            } catch (FileNotFoundException e) {
+                Dialog.showError("Error reading file: " + e.getMessage());
+            }
+        }
+
+        customListsComboBox.setSelectedIndex(0);
+    }//GEN-LAST:event_customListsComboBoxActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addMarkerBtn;
@@ -1486,6 +1554,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
     private javax.swing.JButton clearMarkersBtn;
     private javax.swing.JButton clearPayloadsBtn;
     private javax.swing.JButton clearTablesBtn;
+    private javax.swing.JComboBox<ListItem<File>> customListsComboBox;
     private javax.swing.JButton dedupePayloadsBtn;
     private javax.swing.JTextField delayTextField;
     private javax.swing.JButton exportTablesBtn;
