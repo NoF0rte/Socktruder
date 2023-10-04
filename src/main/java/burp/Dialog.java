@@ -1,5 +1,7 @@
 package burp;
 
+import java.util.ArrayList;
+
 import javax.swing.JOptionPane;
 
 public class Dialog {
@@ -23,5 +25,11 @@ public class Dialog {
 	}
 	public static void showError(String error) {
 		JOptionPane.showMessageDialog(null, error, Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> T showOkCancelInput(String message, ArrayList<T> values) {
+		Object selected = JOptionPane.showInputDialog(null, message, Extension.EXTENSION_NAME, JOptionPane.OK_CANCEL_OPTION, null, values.toArray(), null);
+		return (T)selected;
 	}
 }
