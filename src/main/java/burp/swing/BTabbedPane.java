@@ -1,9 +1,13 @@
 package burp.swing;
 
+import java.awt.AWTEvent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.MouseEvent;
 import java.util.EventListener;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
@@ -13,6 +17,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
+
 import javax.swing.Box.Filler;
 
 import com.formdev.flatlaf.icons.FlatTabbedPaneCloseIcon;
@@ -161,6 +166,7 @@ public class BTabbedPane extends JTabbedPane {
 
 	public class TabComponent extends JPanel {
 		private final JTabbedPane parent;
+		private final AWTEventListener mouseListener;
 
 		private final Component tabContent;
 		public Component getTabContent() {
@@ -193,6 +199,8 @@ public class BTabbedPane extends JTabbedPane {
 				Component selected = parent.getTabComponentAt(parent.getSelectedIndex());
 				setActive(selected == this);
 			});
+
+			mouseListener = new MouseListener(textField);
 		}
 
 		private void initComponents() {
@@ -240,6 +248,8 @@ public class BTabbedPane extends JTabbedPane {
 			}
 	
 			if (evt.getClickCount() >= 2) {
+				Toolkit.getDefaultToolkit().addAWTEventListener(mouseListener, AWTEvent.MOUSE_EVENT_MASK);
+
 				textField.setEditable(true);
 				textField.setFocusable(true);
 				textField.grabFocus();
@@ -256,7 +266,30 @@ public class BTabbedPane extends JTabbedPane {
 			textField.setText(text);
 			textField.setEditable(false);
 			textField.setFocusable(false);
+			Toolkit.getDefaultToolkit().removeAWTEventListener(mouseListener);
 		}
+	}
+
+	private class MouseListener implements AWTEventListener {
+		private Component component;
+
+		public MouseListener(Component component) {
+			this.component = component;
+		}
+
+		@Override
+		public void eventDispatched(AWTEvent event) {
+			if(event instanceof MouseEvent){
+				MouseEvent evt = (MouseEvent)event;
+				if(evt.getID() == MouseEvent.MOUSE_CLICKED){
+					Component clicked = evt.getComponent();
+					if (clicked != component) {
+						clicked.requestFocus();
+					}
+				}
+			}
+		}
+
 	}
 
 	public interface CloseListener extends EventListener {
