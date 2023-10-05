@@ -289,7 +289,6 @@ public class BTabbedPane extends JTabbedPane {
 				}
 			}
 		}
-
 	}
 
 	public interface CloseListener extends EventListener {

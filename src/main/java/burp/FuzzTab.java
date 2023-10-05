@@ -504,17 +504,17 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
             constraints.anchor = java.awt.GridBagConstraints.LINE_END;
             // constraints.insets = new java.awt.Insets(0, 0, 0, 5);
             constraints.gridy = 0;
+            constraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
 
             int selected = jTabbedPane1.getSelectedIndex();
-            if (selected == 0) {
+            if (selected == 0) { // Positions
                 constraints.gridx = 2;
-                constraints.gridwidth = 2;
                 positionsPanel.add(attackPanel, constraints);
-            } else if (selected == 1) {
-                constraints.gridx = 5;
-                payloadsPanel.add(attackPanel, constraints);
-            } else if (selected == 2) {
+            } else if (selected == 1) { // Payloads
                 constraints.gridx = 2;
+                payloadsPanel.add(attackPanel, constraints);
+            } else if (selected == 2) { // Settings
+                constraints.gridx = 1;
                 settingsPanel.add(attackPanel, constraints);
             }
         });
@@ -644,7 +644,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         positionsPanel.add(jLabel1, gridBagConstraints);
@@ -762,7 +761,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         positionsPanel.add(attackPanel, gridBagConstraints);
 
@@ -774,15 +773,15 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 0);
         positionsPanel.add(syntaxHighlightingComboBox, gridBagConstraints);
 
         jLabel17.setText("Syntax Highlighting:");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         positionsPanel.add(jLabel17, gridBagConstraints);
 
@@ -796,7 +795,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         payloadsPanel.add(jLabel4, gridBagConstraints);
@@ -809,7 +807,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LAST_LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 0, 15, 0);
         payloadsPanel.add(jLabel5, gridBagConstraints);
@@ -818,6 +816,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         payloadsPanel.add(jLabel6, gridBagConstraints);
 
         positionsComboBox.addActionListener(new java.awt.event.ActionListener() {
@@ -828,6 +827,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 10, 0, 0);
@@ -835,19 +835,20 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         jLabel7.setText("Payload count:");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.insets = new java.awt.Insets(0, 20, 0, 0);
         payloadsPanel.add(jLabel7, gridBagConstraints);
 
         payloadCountLabel.setText("0");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         payloadsPanel.add(payloadCountLabel, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 0);
@@ -858,21 +859,20 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         payloadsPanel.add(jLabel8, gridBagConstraints);
 
         jLabel9.setFont(new java.awt.Font("Cantarell", 0, 14)); // NOI18N
-        jLabel9.setText("Configure a simple list of strings that are used as payloads");
+        jLabel9.setText("Configure a simple list of strings that are used as payloads.");
         jLabel9.setMaximumSize(new java.awt.Dimension(363, 20));
         jLabel9.setMinimumSize(new java.awt.Dimension(363, 20));
         jLabel9.setPreferredSize(new java.awt.Dimension(363, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LAST_LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 0, 15, 0);
         payloadsPanel.add(jLabel9, gridBagConstraints);
@@ -1006,7 +1006,7 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         payloadsPanel.add(jPanel2, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 5;
+        gridBagConstraints.gridx = 6;
         gridBagConstraints.gridy = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
@@ -1015,14 +1015,14 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
 
         jLabel16.setText("Request count:");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.insets = new java.awt.Insets(0, 20, 15, 0);
         payloadsPanel.add(jLabel16, gridBagConstraints);
 
         requestsCountLabel.setText("0");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 15, 0);
         payloadsPanel.add(requestsCountLabel, gridBagConstraints);
@@ -1039,10 +1039,12 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         settingsPanel.add(jLabel12, gridBagConstraints);
 
         delayTextField.setText(Integer.toString(settings.getDelay()));
+        delayTextField.setMaximumSize(new java.awt.Dimension(500, 25));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 0.3;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 0);
         settingsPanel.add(delayTextField, gridBagConstraints);
@@ -1059,8 +1061,6 @@ public class FuzzTab extends javax.swing.JPanel implements MessageHandler, Close
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         settingsPanel.add(jLabel13, gridBagConstraints);
