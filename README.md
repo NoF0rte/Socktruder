@@ -40,7 +40,7 @@ The message is dropped and a new tab is created within the Socktruder tab.
 **Note:** Socktruder currently only works with text based WebSocket messages sent to the server. I didn't see a need to fuzz messages send to the client. If this is a desired feature, let me know.
 
 ### Configuring the Attack
-Configure a Socktruder attack is very similar to how you would do it in Intruder. Insert the marker character to define payload positions.
+Configuring a Socktruder attack is very similar to how you would do it in Intruder. Insert the marker character to define payload positions.
 
 ![Configure Positions](res/configure-positions.png)
 
@@ -51,9 +51,9 @@ Configure payloads for each payload set by manually entering them in, loading th
 **Note**: Different attack types are not currently implemented, but will be implemented in the future. Socktruder iterates through each payload set one at a time.
 
 ### Starting the Attack
-To start the attack, just click the "Start attack" button. Once started, messages sent will appear in the "To Server" table and messages received will appear in the "To Client" table. Due to the nature of WebSockets, it is impossible to correlate a message sent with a message received. Because of this, while executing the attack, it is very possible that messages in the "To Client" table are not related to the messages being sent.
+To start the attack, just click the "Start attack" button. Once started, messages sent will appear in the "To Server" table and messages received will appear in the "To Client" table. Due to the nature of WebSockets, it is impossible to correlate a message sent with a message received. Because of this, it is very possible that messages shown in the "To Client" table are not actually related to the messages being sent by Socktruder.
 
-To help determine which message received is related to which message sent, selecting a row in the "To Server" table will highlight the row in the "To Client" table that is the closest chronologically to the message sent.
+To help determine which of the received and sent messages are related, selecting a row in the "To Server" table will highlight a row in the "To Client" table that is the closest chronologically to the message sent.
 
 ![Executing Attack](res/executing-attack.png)
 
