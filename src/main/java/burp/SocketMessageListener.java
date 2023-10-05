@@ -26,7 +26,7 @@ public class SocketMessageListener implements MessageHandler {
 	@Override
 	public TextMessageAction handleTextMessage(TextMessage textMessage) {
 		Matcher matcher = Extension.SEND_REGEX.matcher(textMessage.payload());
-		if (!matcher.find()) {
+		if (textMessage.direction() == Direction.SERVER_TO_CLIENT || !matcher.find()) {
 			return TextMessageAction.continueWith(textMessage);
 		}
 
