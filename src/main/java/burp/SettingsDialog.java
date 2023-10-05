@@ -20,11 +20,12 @@ import burp.swing.BListTableModel;
  */
 public class SettingsDialog extends javax.swing.JDialog {
     private BListTableModel customListsModel = new BListTableModel();
-    private boolean canceled = false;
+    private boolean shouldSave = false;
     private String customListsDir = "";
 
     private void save() {
         Config.get().setCustomListsDir(customListsDir);
+        shouldSave = false;
     }
 
     private void populateCustomLists(File dir) {
@@ -64,9 +65,12 @@ public class SettingsDialog extends javax.swing.JDialog {
         setLocationRelativeTo(null);
         addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosed(WindowEvent e) {
-                if (!canceled) {
-                    save();
+            public void windowClosing(WindowEvent e) {
+                if (shouldSave) {
+                    Dialog.showYesNo("Do you want to save your changes?", () -> {
+                        save();
+                        shouldSave = false;
+                    });
                 }
             }
         });
@@ -205,18 +209,23 @@ public class SettingsDialog extends javax.swing.JDialog {
         customListsModel.clear();
 
         File selectedFile = dirChooser.getSelectedFile();
-        customListsDir = selectedFile.toString();
-        customListsDirTextBox.setText(customListsDir);
+        if (!customListsDir.equals(selectedFile.toString())) {
+            customListsDir = selectedFile.toString();
+            customListsDirTextBox.setText(customListsDir);
+
+            shouldSave = true;
+        }
 
         populateCustomLists(selectedFile);
     }//GEN-LAST:event_customListsBtnActionPerformed
 
     private void cancelBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelBtnActionPerformed
-        canceled = true;
+        shouldSave = false;
         dispose();
     }//GEN-LAST:event_cancelBtnActionPerformed
 
     private void saveBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveBtnActionPerformed
+        save();
         dispose();
     }//GEN-LAST:event_saveBtnActionPerformed
 
