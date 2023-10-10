@@ -6,13 +6,13 @@ import javax.swing.JOptionPane;
 
 public class Dialog {
 	public static void showMessage(String message) {
-		JOptionPane.showMessageDialog(null, message, Extension.EXTENSION_NAME, JOptionPane.INFORMATION_MESSAGE);
+		JOptionPane.showMessageDialog(Extension.api().userInterface().swingUtils().suiteFrame(), message, Extension.EXTENSION_NAME, JOptionPane.INFORMATION_MESSAGE);
 	}
 	public static void showYesNo(String message, Runnable yesAction) {
 		showYesNo(message, yesAction, null);
 	}
 	public static void showYesNo(String message, Runnable yesAction, Runnable noAction) {
-		int result = JOptionPane.showConfirmDialog(null, message, Extension.EXTENSION_NAME, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+		int result = JOptionPane.showConfirmDialog(Extension.api().userInterface().swingUtils().suiteFrame(), message, Extension.EXTENSION_NAME, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 		if (result == JOptionPane.YES_OPTION) {
 			if (yesAction != null) {
 				yesAction.run();
@@ -24,12 +24,12 @@ public class Dialog {
 		}
 	}
 	public static void showError(String error) {
-		JOptionPane.showMessageDialog(null, error, Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
+		JOptionPane.showMessageDialog(Extension.api().userInterface().swingUtils().suiteFrame(), error, Extension.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
 	}
 
 	@SuppressWarnings("unchecked")
 	public static <T> T showOkCancelInput(String message, ArrayList<T> values) {
-		Object selected = JOptionPane.showInputDialog(null, message, Extension.EXTENSION_NAME, JOptionPane.OK_CANCEL_OPTION, null, values.toArray(), null);
+		Object selected = JOptionPane.showInputDialog(Extension.api().userInterface().swingUtils().suiteFrame(), message, Extension.EXTENSION_NAME, JOptionPane.OK_CANCEL_OPTION, null, values.toArray(), null);
 		return (T)selected;
 	}
 }

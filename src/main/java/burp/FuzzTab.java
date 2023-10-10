@@ -44,7 +44,7 @@ import java.io.FileNotFoundException;
 
 /**
  *
- * @author kali
+ * @author NoF0rte
  */
 public class FuzzTab extends javax.swing.JPanel implements MessageHandler, CloseableComponent {
 

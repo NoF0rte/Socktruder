@@ -18,13 +18,16 @@ public class Extension implements BurpExtension, WebSocketCreatedHandler, Extens
 	public static final String SEND_KEYWORD = "@Socktruder";
 	public static final Pattern SEND_REGEX = Pattern.compile(String.format("%s(?:_([^\\s]*))?", Extension.SEND_KEYWORD), Pattern.MULTILINE);
 
-	private ArrayList<Registration> registrations = new ArrayList<>();
+	private static MontoyaApi api;
+	public static MontoyaApi api() {
+		return api;
+	}
 
-	private MontoyaApi api;
+	private ArrayList<Registration> registrations = new ArrayList<>();
 
 	@Override
 	public void initialize(MontoyaApi api) {
-		this.api = api;
+		Extension.api = api;
 
 		api.extension().setName(EXTENSION_NAME);
 

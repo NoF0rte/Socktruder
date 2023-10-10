@@ -16,7 +16,7 @@ import burp.swing.BListTableModel;
 
 /**
  *
- * @author parallels
+ * @author NoF0rte
  */
 public class SettingsDialog extends javax.swing.JDialog {
     private BListTableModel customListsModel = new BListTableModel();

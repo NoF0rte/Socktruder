@@ -14,7 +14,7 @@ import burp.api.montoya.websocket.WebSocket;
 
 /**
  *
- * @author parallels
+ * @author NoF0rte
  */
 public class SuiteTab extends javax.swing.JPanel {
 
